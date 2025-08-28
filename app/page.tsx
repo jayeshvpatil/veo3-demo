@@ -7,9 +7,10 @@ import React, {
   useRef,
   useState,
 } from "react";
-import { Clock } from "lucide-react";
-import Composer from "@/components/ui/Composer";
-import VideoPlayer from "@/components/ui/VideoPlayer";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/Tabs";
+import ProductSelectionTab from "@/components/ui/ProductSelectionTab";
+import PromptManagementTab from "@/components/ui/PromptManagementTab";
+import ReviewTab from "@/components/ui/ReviewTab";
 
 type VeoOperationName = string | null;
 
@@ -22,6 +23,33 @@ const VeoStudio: React.FC = () => {
   const [selectedModel, setSelectedModel] = useState(
     "veo-3.0-generate-preview"
   );
+
+  // Tab state management
+  const [activeTab, setActiveTab] = useState("products");
+
+  // New customization options
+  const [visualStyle, setVisualStyle] = useState("");
+  const [cameraAngle, setCameraAngle] = useState("");
+  const [description, setDescription] = useState("");
+
+  // Listen for product selection events
+  useEffect(() => {
+    const handleProductUpdate = (event: CustomEvent) => {
+      setPrompt(event.detail.prompt);
+      setDescription(event.detail.description || "");
+      
+      // If an image file is provided, set it and enable image tools
+      if (event.detail.imageFile) {
+        setImageFile(event.detail.imageFile);
+        setShowImageTools(true);
+      }
+    };
+
+    window.addEventListener('updateVideoPrompt', handleProductUpdate as EventListener);
+    return () => {
+      window.removeEventListener('updateVideoPrompt', handleProductUpdate as EventListener);
+    };
+  }, []);
 
   // Imagen-specific prompt
   const [imagePrompt, setImagePrompt] = useState("");
@@ -40,6 +68,9 @@ const VeoStudio: React.FC = () => {
 
   const [showImageTools, setShowImageTools] = useState(false);
 
+  // Image input ref
+  const imageInputRef = useRef<HTMLInputElement>(null);
+
   const canStart = useMemo(() => {
     if (!prompt.trim()) return false;
     if (showImageTools && !(imageFile || generatedImage)) return false;
@@ -50,6 +81,9 @@ const VeoStudio: React.FC = () => {
     setPrompt("");
     setNegativePrompt("");
     setAspectRatio("16:9");
+    setVisualStyle("");
+    setCameraAngle("");
+    setDescription("");
     setImagePrompt("");
     setImageFile(null);
     setGeneratedImage(null);
@@ -89,14 +123,41 @@ const VeoStudio: React.FC = () => {
     }
   }, [imagePrompt]);
 
+  // Build complete prompt with customizations
+  const buildCompletePrompt = useCallback(() => {
+    let completePrompt = prompt;
+    
+    // Add visual style
+    if (visualStyle) {
+      completePrompt = `${visualStyle} style: ${completePrompt}`;
+    }
+    
+    // Add camera angle
+    if (cameraAngle) {
+      completePrompt = `${completePrompt}. Shot with ${cameraAngle} camera angle`;
+    }
+    
+    // Add product description context if available
+    if (description && description !== prompt) {
+      completePrompt = `${completePrompt}. Product details: ${description}`;
+    }
+    
+    return completePrompt;
+  }, [prompt, visualStyle, cameraAngle, description]);
+
   // Start Veo job
   const startGeneration = useCallback(async () => {
     if (!canStart) return;
     setIsGenerating(true);
     setVideoUrl(null);
 
+    // Switch to review tab immediately when generation starts
+    setActiveTab("review");
+
+    const completePrompt = buildCompletePrompt();
+    
     const form = new FormData();
-    form.append("prompt", prompt);
+    form.append("prompt", completePrompt);
     form.append("model", selectedModel);
     if (negativePrompt) form.append("negativePrompt", negativePrompt);
     if (aspectRatio) form.append("aspectRatio", aspectRatio);
@@ -125,13 +186,14 @@ const VeoStudio: React.FC = () => {
     }
   }, [
     canStart,
-    prompt,
+    buildCompletePrompt,
     selectedModel,
     negativePrompt,
     aspectRatio,
     showImageTools,
     imageFile,
     generatedImage,
+    setActiveTab,
   ]);
 
   // Poll operation until done then download
@@ -227,54 +289,82 @@ const VeoStudio: React.FC = () => {
   };
 
   return (
-    <div className="relative min-h-screen w-full text-stone-900">
-      <div className="absolute top-4 left-4 z-20 hidden md:block">
-        <h1 className="text-lg font-semibold text-slate-900/80 backdrop-blur-sm bg-white/20 px-3 py-1 rounded-lg">
-          Veo 3
-        </h1>
-      </div>
-      {/* Center hint or video */}
-      <div className="flex items-center justify-center min-h-screen pb-40 px-4">
-        {!videoUrl &&
-          (isGenerating ? (
-            <div className="text-stone-700 select-none inline-flex items-center gap-2">
-              <Clock className="w-4 h-4 animate-spin" /> Generating Video...
-            </div>
-          ) : (
-            <div className="text-stone-400 select-none">
-              Nothing to see here yet.
-            </div>
-          ))}
-        {videoUrl && (
-          <div className="w-full max-w-3xl">
-            <VideoPlayer
-              src={videoUrl}
+    <div className="h-screen bg-gray-50">
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="h-full flex flex-col">
+        {/* Header with Tabs */}
+        <div className="bg-white border-b border-gray-200 shadow-sm">
+          <div className="px-8 py-6">
+            <h1 className="text-2xl font-semibold text-gray-900 mb-4">
+              Further AI : Product Display Demo
+            </h1>
+            <TabsList>
+              <TabsTrigger value="products">
+                📦 Product Selection
+              </TabsTrigger>
+              <TabsTrigger value="prompt">
+                ✨ Prompt Management
+              </TabsTrigger>
+              <TabsTrigger value="review">
+                🎬 Review & Rating
+              </TabsTrigger>
+            </TabsList>
+          </div>
+        </div>
+
+        {/* Tab Content */}
+        <div className="flex-1 overflow-hidden">
+          <TabsContent value="products" className="h-full">
+            <ProductSelectionTab />
+          </TabsContent>
+          
+          <TabsContent value="prompt" className="h-full">
+            <PromptManagementTab
+              prompt={prompt}
+              setPrompt={setPrompt}
+              selectedModel={selectedModel}
+              setSelectedModel={setSelectedModel}
+              canStart={canStart}
+              isGenerating={isGenerating}
+              startGeneration={startGeneration}
+              showImageTools={showImageTools}
+              setShowImageTools={setShowImageTools}
+              imagePrompt={imagePrompt}
+              setImagePrompt={setImagePrompt}
+              imagenBusy={imagenBusy}
+              onPickImage={onPickImage}
+              generateWithImagen={generateWithImagen}
+              imageFile={imageFile}
+              generatedImage={generatedImage}
+              resetAll={resetAll}
+              visualStyle={visualStyle}
+              setVisualStyle={setVisualStyle}
+              cameraAngle={cameraAngle}
+              setCameraAngle={setCameraAngle}
+              description={description}
+              setDescription={setDescription}
+            />
+          </TabsContent>
+          
+          <TabsContent value="review" className="h-full">
+            <ReviewTab
+              videoUrl={videoUrl}
+              isGenerating={isGenerating}
               onOutputChanged={handleTrimmedOutput}
               onDownload={downloadVideo}
               onResetTrim={handleResetTrimState}
+              prompt={buildCompletePrompt()}
             />
-          </div>
-        )}
-      </div>
+          </TabsContent>
+        </div>
+      </Tabs>
 
-      <Composer
-        prompt={prompt}
-        setPrompt={setPrompt}
-        selectedModel={selectedModel}
-        setSelectedModel={setSelectedModel}
-        canStart={canStart}
-        isGenerating={isGenerating}
-        startGeneration={startGeneration}
-        showImageTools={showImageTools}
-        setShowImageTools={setShowImageTools}
-        imagePrompt={imagePrompt}
-        setImagePrompt={setImagePrompt}
-        imagenBusy={imagenBusy}
-        onPickImage={onPickImage}
-        generateWithImagen={generateWithImagen}
-        imageFile={imageFile}
-        generatedImage={generatedImage}
-        resetAll={resetAll}
+      {/* Hidden file input */}
+      <input
+        type="file"
+        ref={imageInputRef}
+        accept="image/*"
+        style={{ display: "none" }}
+        onChange={onPickImage}
       />
     </div>
   );

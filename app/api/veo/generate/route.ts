@@ -1,13 +1,13 @@
 import { NextResponse } from "next/server";
 import { GoogleGenAI } from "@google/genai";
 
-if (!process.env.GEMINI_API_KEY) {
-  throw new Error("GEMINI_API_KEY environment variable is not set.");
-}
-
-const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
-
 export async function POST(req: Request) {
+  if (!process.env.GEMINI_API_KEY) {
+    return NextResponse.json({ error: "GEMINI_API_KEY environment variable is not set." }, { status: 500 });
+  }
+
+  const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+
   try {
     const contentType = req.headers.get("content-type") || "";
 
@@ -35,10 +35,13 @@ export async function POST(req: Request) {
 
     let image: { imageBytes: string; mimeType: string } | undefined;
 
-    if (imageFile && imageFile instanceof File) {
-      const buf = await imageFile.arrayBuffer();
+    // Check if the imageFile has the required methods (works in both browser and Node.js)
+    if (imageFile && typeof imageFile === 'object' && 'arrayBuffer' in imageFile) {
+      const fileObject = imageFile as { arrayBuffer(): Promise<ArrayBuffer>; type?: string };
+      const buf = await fileObject.arrayBuffer();
       const b64 = Buffer.from(buf).toString("base64");
-      image = { imageBytes: b64, mimeType: imageFile.type || "image/png" };
+      const mimeType = fileObject.type || "image/png";
+      image = { imageBytes: b64, mimeType };
     } else if (imageBase64) {
       const cleaned = imageBase64.includes(",")
         ? imageBase64.split(",")[1]

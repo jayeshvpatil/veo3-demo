@@ -37,6 +37,14 @@ interface ComposerProps {
   generatedImage: string | null;
 
   resetAll: () => void;
+
+  // New customization props
+  visualStyle: string;
+  setVisualStyle: (value: string) => void;
+  cameraAngle: string;
+  setCameraAngle: (value: string) => void;
+  description: string;
+  setDescription: (value: string) => void;
 }
 
 const Composer: React.FC<ComposerProps> = ({
@@ -57,9 +65,41 @@ const Composer: React.FC<ComposerProps> = ({
   imageFile,
   generatedImage,
   resetAll,
+  visualStyle,
+  setVisualStyle,
+  cameraAngle,
+  setCameraAngle,
+  description,
+  setDescription,
 }) => {
   const [isDragging, setIsDragging] = React.useState(false);
   const fileInputRef = React.useRef<HTMLInputElement>(null);
+
+  // Visual style options
+  const visualStyles = [
+    { value: "", label: "Default" },
+    { value: "cinematic", label: "Cinematic" },
+    { value: "commercial", label: "Commercial" },
+    { value: "fashion", label: "Fashion" },
+    { value: "lifestyle", label: "Lifestyle" },
+    { value: "minimalist", label: "Minimalist" },
+    { value: "luxury", label: "Luxury" },
+    { value: "vintage", label: "Vintage" },
+    { value: "modern", label: "Modern" },
+  ];
+
+  // Camera angle options
+  const cameraAngles = [
+    { value: "", label: "Default" },
+    { value: "close-up", label: "Close-up" },
+    { value: "medium shot", label: "Medium Shot" },
+    { value: "wide shot", label: "Wide Shot" },
+    { value: "overhead", label: "Overhead" },
+    { value: "low angle", label: "Low Angle" },
+    { value: "high angle", label: "High Angle" },
+    { value: "profile", label: "Profile" },
+    { value: "360 degree", label: "360 Degree" },
+  ];
 
   const handleOpenFileDialog = () => {
     fileInputRef.current?.click();
@@ -88,6 +128,25 @@ const Composer: React.FC<ComposerProps> = ({
   const handleReset = () => {
     resetAll();
     setShowImageTools(false);
+  };
+
+  // Build preview of complete prompt
+  const buildPromptPreview = () => {
+    let completePrompt = prompt;
+    
+    if (visualStyle) {
+      completePrompt = `${visualStyle} style: ${completePrompt}`;
+    }
+    
+    if (cameraAngle) {
+      completePrompt = `${completePrompt}. Shot with ${cameraAngle} camera angle`;
+    }
+    
+    if (description && description !== prompt) {
+      completePrompt = `${completePrompt}. Product details: ${description}`;
+    }
+    
+    return completePrompt;
   };
 
   return (
@@ -198,6 +257,59 @@ const Composer: React.FC<ComposerProps> = ({
           />
         </div>
 
+        {/* Customization Options */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-3">
+          {/* Visual Style Dropdown */}
+          <div>
+            <label className="block text-xs font-medium text-slate-900/70 mb-1">
+              Visual Style
+            </label>
+            <select
+              value={visualStyle}
+              onChange={(e) => setVisualStyle(e.target.value)}
+              className="w-full bg-white/50 border border-white/30 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            >
+              {visualStyles.map((style) => (
+                <option key={style.value} value={style.value}>
+                  {style.label}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* Camera Angle Dropdown */}
+          <div>
+            <label className="block text-xs font-medium text-slate-900/70 mb-1">
+              Camera Angle
+            </label>
+            <select
+              value={cameraAngle}
+              onChange={(e) => setCameraAngle(e.target.value)}
+              className="w-full bg-white/50 border border-white/30 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            >
+              {cameraAngles.map((angle) => (
+                <option key={angle.value} value={angle.value}>
+                  {angle.label}
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
+
+        {/* Product Description Field */}
+        <div className="mb-3">
+          <label className="block text-xs font-medium text-slate-900/70 mb-1">
+            Product Description {!description && "(will appear when you select a product)"}
+          </label>
+          <textarea
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+            placeholder="Product description will appear here when you select a product from the sidebar..."
+            className="w-full bg-white/50 border border-white/30 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 resize-none"
+            rows={2}
+          />
+        </div>
+
         <textarea
           value={prompt}
           onChange={(e) => setPrompt(e.target.value)}
@@ -205,6 +317,7 @@ const Composer: React.FC<ComposerProps> = ({
           className="w-full bg-transparent focus:outline-none resize-none text-base font-normal placeholder-slate-800/60"
           rows={2}
         />
+        
         <div className="flex items-center justify-between mt-3">
           <div className="flex items-center gap-2">
             <button
@@ -214,6 +327,21 @@ const Composer: React.FC<ComposerProps> = ({
             >
               <RotateCcw className="w-5 h-5" />
             </button>
+            
+            {/* Complete Prompt Preview - Tooltip only */}
+            {(visualStyle || cameraAngle || (description && description !== prompt)) && (
+              <div className="relative group">
+                <div className="h-10 w-10 flex items-center justify-center bg-white/50 rounded-full hover:bg-white/70 cursor-help">
+                  <span className="text-xs font-semibold text-slate-700">i</span>
+                </div>
+                {/* Tooltip */}
+                <div className="absolute bottom-12 left-1/2 transform -translate-x-1/2 bg-slate-800 text-white text-xs rounded-lg px-3 py-2 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-50 max-w-sm whitespace-normal">
+                  <div className="font-medium mb-1">Complete Prompt:</div>
+                  <div className="italic">&ldquo;{buildPromptPreview()}&rdquo;</div>
+                  <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-l-transparent border-r-transparent border-t-slate-800"></div>
+                </div>
+              </div>
+            )}
           </div>
           <button
             onClick={startGeneration}

@@ -1,27 +1,10 @@
 import type { Metadata } from "next";
-import { Manrope, Source_Code_Pro } from "next/font/google";
-
 import "./globals.css";
-
-// Google Font
-const manrope = Manrope({
-  subsets: ["latin"],
-  display: "swap", // This is the default, but good to be explicit
-  variable: "--font-manrope", // This creates a CSS variable for us
-});
-
-const sourceCodePro = Source_Code_Pro({
-  subsets: ["latin"],
-  display: "swap",
-  variable: "--font-source-code-pro", // CSS variable for the mono font
-});
+import { ProductProvider } from "@/contexts/ProductContext";
 
 export const metadata: Metadata = {
-  title: "Veo 3 Studio",
-  description: "A quickstart for the Gemini API with Veo 3",
-  icons: {
-    icon: "/imgs/gemini_icon.svg",
-  },
+  title: "Further X MK AI demo",
+  description: "Created By Further AI Team",
 };
 
 export default function RootLayout({
@@ -31,10 +14,10 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={`${manrope.variable} ${sourceCodePro.variable}`}>
-        <div className="bg-gray-200 text-stone-900">
-          <main>{children}</main>
-        </div>
+      <body className="font-sans antialiased" style={{ fontFamily: 'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif' }}>
+        <ProductProvider>
+          {children}
+        </ProductProvider>
       </body>
     </html>
   );

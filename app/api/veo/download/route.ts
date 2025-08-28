@@ -1,10 +1,10 @@
 import { NextResponse } from "next/server";
 
-if (!process.env.GEMINI_API_KEY) {
-  throw new Error("GEMINI_API_KEY environment variable is not set.");
-}
-
 export async function POST(req: Request) {
+  if (!process.env.GEMINI_API_KEY) {
+    return NextResponse.json({ error: "GEMINI_API_KEY environment variable is not set." }, { status: 500 });
+  }
+
   try {
     const body = await req.json();
     const uri: string | undefined = body?.uri || body?.file?.uri;

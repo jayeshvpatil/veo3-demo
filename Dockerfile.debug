@@ -1,0 +1,16 @@
+# Debug Dockerfile to check file structure
+FROM node:18-alpine AS debug
+
+WORKDIR /app
+
+# Copy everything first
+COPY . .
+
+# List the structure
+RUN echo "=== Root directory ===" && ls -la
+RUN echo "=== Components directory ===" && ls -la components/
+RUN echo "=== Components/ui directory ===" && ls -la components/ui/
+RUN echo "=== Contexts directory ===" && ls -la contexts/
+
+# Stop here for debugging
+CMD ["sleep", "infinity"]
