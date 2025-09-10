@@ -5,7 +5,11 @@ interface SavedVisual {
   id: string;
   url: string;
   prompt: string;
-  product?: any;
+  product?: {
+    id: string;
+    title: string;
+    description: string;
+  };
   timestamp: number;
 }
 

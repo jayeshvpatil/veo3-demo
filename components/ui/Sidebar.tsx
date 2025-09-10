@@ -44,27 +44,33 @@ export default function Sidebar() {
     fetch('/api/products')
       .then(res => res.json())
       .then(data => {
-        setProducts(data);
+        // Ensure data is an array
+        setProducts(Array.isArray(data) ? data : []);
         setLoading(false);
       })
       .catch(err => {
         console.error('Failed to load products:', err);
+        setProducts([]); // Set empty array on error
         setLoading(false);
       });
   }, []);
 
   const filterOptions = useMemo(() => {
+    // Ensure products is always an array before mapping
+    const safeProducts = Array.isArray(products) ? products : [];
     return {
-      gender: [...new Set(products.map(p => p.gender).filter(Boolean))],
-      availability: [...new Set(products.map(p => p.availability).filter(Boolean))],
-      age_group: [...new Set(products.map(p => p.age_group).filter(Boolean))],
-      brand: [...new Set(products.map(p => p.brand).filter(Boolean))],
-      category: [...new Set(products.map(p => p.category).filter(Boolean))],
+      gender: [...new Set(safeProducts.map(p => p.gender).filter(Boolean))],
+      availability: [...new Set(safeProducts.map(p => p.availability).filter(Boolean))],
+      age_group: [...new Set(safeProducts.map(p => p.age_group).filter(Boolean))],
+      brand: [...new Set(safeProducts.map(p => p.brand).filter(Boolean))],
+      category: [...new Set(safeProducts.map(p => p.category).filter(Boolean))],
     };
   }, [products]);
 
     const filteredProducts = useMemo(() => {
-    return products.filter(product => {
+    // Ensure products is always an array before filtering
+    const safeProducts = Array.isArray(products) ? products : [];
+    return safeProducts.filter(product => {
       // Gender filter
       if (filters.gender.length > 0 && !filters.gender.includes(product.gender)) return false;
       

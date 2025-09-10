@@ -7,7 +7,11 @@ interface SavedVisual {
   id: string;
   url: string;
   prompt: string;
-  product?: any;
+  product?: {
+    id: string;
+    title: string;
+    description: string;
+  };
   timestamp: number;
 }
 
@@ -55,7 +59,7 @@ export default function VisualsLibraryTab({
         <ImageIcon size={64} className="mb-4 opacity-50" />
         <h3 className="text-xl font-semibold mb-2">No visuals saved yet</h3>
         <p className="text-center max-w-md">
-          Generated visuals will appear here automatically. Use the "Product & Visual Selection" tab to create stunning product visuals.
+          Generated visuals will appear here automatically. Use the &quot;Product &amp; Visual Selection&quot; tab to create stunning product visuals.
         </p>
       </div>
     );

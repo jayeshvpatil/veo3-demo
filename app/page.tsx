@@ -33,7 +33,11 @@ const VeoStudio: React.FC = () => {
     id: string;
     url: string;
     prompt: string;
-    product?: any;
+    product?: {
+      id: string;
+      title: string;
+      description: string;
+    };
     timestamp: number;
   }>>([]);
 

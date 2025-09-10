@@ -26,23 +26,6 @@ const visualStyles = [
   { id: 'social', name: 'Social Media Ready', description: 'Optimized for Instagram and social platforms' }
 ];
 
-// Helper function to validate and fix base64 data
-const validateBase64 = (base64String: string): string => {
-  try {
-    // Remove any whitespace
-    const cleaned = base64String.replace(/\s/g, '');
-    
-    // Check if it's valid base64
-    const decoded = atob(cleaned);
-    console.log('Base64 validation successful, decoded length:', decoded.length);
-    
-    return cleaned;
-  } catch (error) {
-    console.error('Invalid base64 data:', error);
-    return '';
-  }
-};
-
 export function VisualGeneration({ productName, productDescription, onVisualSelected, onBack }: VisualGenerationProps) {
   const { saveVisualToLibrary } = useProduct();
   const [prompt, setPrompt] = useState('Create a stunning, professional product photo with perfect lighting and premium background');
@@ -92,7 +75,7 @@ export function VisualGeneration({ productName, productDescription, onVisualSele
       
       // Debug each image
       if (data.images) {
-        data.images.forEach((img: any, i: number) => {
+        data.images.forEach((img: { data: string; mimeType: string }, i: number) => {
           console.log(`Image ${i}:`, {
             mimeType: img.mimeType,
             dataLength: img.data?.length,
@@ -105,7 +88,7 @@ export function VisualGeneration({ productName, productDescription, onVisualSele
       if (data.images && data.images.length > 0) {
         // Store images on server and get URLs
         const imagesWithUrls = await Promise.all(
-          data.images.map(async (img: any) => {
+          data.images.map(async (img: { data: string; mimeType: string }) => {
             try {
               const storeResponse = await fetch('/api/visuals/serve', {
                 method: 'POST',
