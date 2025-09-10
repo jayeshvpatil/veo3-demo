@@ -48,7 +48,7 @@ git clone https://github.com/jayeshvpatil/veo3-demo.git
 cd veo3-demo
 
 # Deploy to Cloud Run (includes build, push, and deploy)
-./one-command-deploy.sh
+./deploy/deploy.sh
 ```
 
 The script will:
@@ -101,7 +101,7 @@ Open [http://localhost:3000](http://localhost:3000) to see the application.
 
 **One-Command Deploy:**
 ```bash
-./one-command-deploy.sh
+./deploy/deploy.sh
 ```
 
 **Manual Deploy with Artifact Registry:**

@@ -4,9 +4,29 @@ node_modules
 npm-debug.log
 README.md
 .env
+.env.local
+.env.development
+.env.production
 .git
 .gitignore
 .next
 .allstar
 .gemini
 .DS_Store
+
+# Deployment files
+deploy/
+*.sh
+cloudbuild.yaml
+DEPLOYMENT.md
+FIXES.md
+
+# Development files
+.vscode/
+*.log
+coverage/
+.nyc_output/
+
+# Build artifacts
+dist/
+build/

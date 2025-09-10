@@ -2,6 +2,10 @@
 
 This guide will help you deploy the Veo 3 Demo app to Google Cloud Run.
 
+> **📁 Note**: All deployment files are now organized in the `/deploy` folder for better organization.
+> 
+> **📚 Complete Guide**: For comprehensive deployment documentation, see [`deploy/README.md`](./deploy/README.md)
+
 ## 📋 Prerequisites
 
 1. **Google Cloud Platform Account**: You need a GCP account with billing enabled
@@ -29,28 +33,30 @@ This guide will help you deploy the Veo 3 Demo app to Google Cloud Run.
 
 ## 🚀 Deployment Options
 
-### Option 1: Direct Docker Deployment (Recommended for beginners)
+### Option 1: One-Command Deployment (Recommended)
 
-Use the simple deployment script that builds and deploys directly:
+Use the comprehensive deployment script that handles everything:
 
 ```bash
-./deploy.sh
+./deploy/deploy.sh
 ```
 
 This script will:
-- ✅ Check prerequisites
-- ✅ Enable required GCP APIs
-- ✅ Build the Docker image
-- ✅ Push to Google Container Registry
+- ✅ Check prerequisites (gcloud, Docker)
+- ✅ Guide you through configuration
+- ✅ Set up Google Cloud project and APIs
+- ✅ Create Artifact Registry repository
+- ✅ Build and push Docker image
 - ✅ Deploy to Cloud Run
-- ✅ Configure basic settings
+- ✅ Configure environment variables
 
-### Option 2: Cloud Build Deployment (Recommended for production)
+### Option 2: Cloud Build Deployment (For production environments)
 
 Use Google Cloud Build for more robust CI/CD:
 
 ```bash
-./deploy-cloudbuild.sh
+export PROJECT_ID=your-project-id
+./deploy/scripts/deploy-cloudbuild.sh
 ```
 
 This script will:
@@ -64,7 +70,7 @@ This script will:
 After deployment, set up your environment variables:
 
 ```bash
-./setup-env.sh
+./deploy/scripts/setup-env.sh
 ```
 
 You'll be prompted to enter:
