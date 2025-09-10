@@ -35,13 +35,18 @@ const VeoStudio: React.FC = () => {
   // Listen for product selection events
   useEffect(() => {
     const handleProductUpdate = (event: CustomEvent) => {
-      setPrompt(event.detail.prompt);
+      setPrompt(event.detail.prompt || "");
       setDescription(event.detail.description || "");
       
       // If an image file is provided, set it and enable image tools
       if (event.detail.imageFile) {
         setImageFile(event.detail.imageFile);
         setShowImageTools(true);
+      }
+
+      // Navigate to specified tab (for visual generation workflow)
+      if (event.detail.navigateToTab) {
+        setActiveTab(event.detail.navigateToTab);
       }
     };
 
@@ -72,7 +77,7 @@ const VeoStudio: React.FC = () => {
   const imageInputRef = useRef<HTMLInputElement>(null);
 
   const canStart = useMemo(() => {
-    if (!prompt.trim()) return false;
+    if (!prompt || !prompt.trim()) return false;
     if (showImageTools && !(imageFile || generatedImage)) return false;
     return true;
   }, [prompt, showImageTools, imageFile, generatedImage]);
@@ -299,25 +304,25 @@ const VeoStudio: React.FC = () => {
             </h1>
             <TabsList>
               <TabsTrigger value="products">
-                📦 Product Selection
+                �️ Product & Visual Selection
               </TabsTrigger>
               <TabsTrigger value="prompt">
-                ✨ Prompt Management
+                🎬 Video Creation Studio
               </TabsTrigger>
               <TabsTrigger value="review">
-                🎬 Review & Rating
+                📱 Generated Videos & Review
               </TabsTrigger>
             </TabsList>
           </div>
         </div>
 
         {/* Tab Content */}
-        <div className="flex-1 overflow-hidden">
-          <TabsContent value="products" className="h-full">
+        <div className="flex-1">
+          <TabsContent value="products" className="h-full overflow-y-auto">
             <ProductSelectionTab />
           </TabsContent>
           
-          <TabsContent value="prompt" className="h-full">
+          <TabsContent value="prompt" className="h-full overflow-hidden">
             <PromptManagementTab
               prompt={prompt}
               setPrompt={setPrompt}

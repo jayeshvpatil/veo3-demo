@@ -2,8 +2,9 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
 import Image from 'next/image';
-import { ArrowRight, Filter, Star, Grid3X3, List } from 'lucide-react';
+import { ArrowRight, Filter, Star, Grid3X3, List, Sparkles } from 'lucide-react';
 import { useProduct } from '../../contexts/ProductContext';
+import { VisualGeneration } from './VisualGeneration';
 
 export interface Product {
   id: string;
@@ -16,6 +17,10 @@ export interface Product {
   brand: string;
   best_seller: boolean;
   category: string;
+  generatedVisual?: {
+    data: string;
+    mimeType: string;
+  };
 }
 
 interface Filters {
@@ -37,6 +42,9 @@ export default function ProductSelectionTab({ className = "" }: ProductSelection
   const [loading, setLoading] = useState(true);
   const [showFilters, setShowFilters] = useState(false);
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
+  const [showVisualGeneration, setShowVisualGeneration] = useState(false);
+  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
+  const [generatedVisual, setGeneratedVisual] = useState<{data: string, mimeType: string} | null>(null);
   
   const [filters, setFilters] = useState<Filters>({
     gender: [],
@@ -91,7 +99,48 @@ export default function ProductSelectionTab({ className = "" }: ProductSelection
 
   const handleSelectForVideo = (product: Product) => {
     setSelectedId(product.id);
-    addProductToPrompt(product);
+    setSelectedProduct(product);
+    setShowVisualGeneration(true);
+  };
+
+  const handleVisualSelected = (imageData: string, mimeType: string) => {
+    setGeneratedVisual({ data: imageData, mimeType });
+    if (selectedProduct) {
+      // Create product with generated visual
+      const productWithVisual = {
+        ...selectedProduct,
+        generatedVisual: { data: imageData, mimeType }
+      };
+      
+      // Add the product with the generated visual to context
+      addProductToPrompt(productWithVisual);
+      
+      // Create a File object from the generated visual for the video workflow
+      const byteCharacters = atob(imageData);
+      const byteNumbers = new Array(byteCharacters.length);
+      for (let i = 0; i < byteCharacters.length; i++) {
+        byteNumbers[i] = byteCharacters.charCodeAt(i);
+      }
+      const byteArray = new Uint8Array(byteNumbers);
+      const visualFile = new File([byteArray], `${selectedProduct.id}-visual.${mimeType.split('/')[1]}`, { type: mimeType });
+      
+      // Dispatch additional event with the visual file for immediate use
+      setTimeout(() => {
+        window.dispatchEvent(new CustomEvent('updateVideoPrompt', { 
+          detail: { 
+            imageFile: visualFile,
+            navigateToTab: 'prompt'
+          } 
+        }));
+      }, 100);
+    }
+    setShowVisualGeneration(false);
+  };
+
+  const handleBackToProducts = () => {
+    setShowVisualGeneration(false);
+    setSelectedProduct(null);
+    setGeneratedVisual(null);
   };
 
   const clearAllFilters = () => {
@@ -111,6 +160,20 @@ export default function ProductSelectionTab({ className = "" }: ProductSelection
           <div className="text-4xl mb-4">📦</div>
           <div className="text-lg text-gray-600">Loading products...</div>
         </div>
+      </div>
+    );
+  }
+
+  // Show visual generation step
+  if (showVisualGeneration && selectedProduct) {
+    return (
+      <div className="h-full overflow-y-auto">
+        <VisualGeneration
+          productName={selectedProduct.title}
+          productDescription={selectedProduct.description}
+          onVisualSelected={handleVisualSelected}
+          onBack={handleBackToProducts}
+        />
       </div>
     );
   }
@@ -338,12 +401,12 @@ export default function ProductSelectionTab({ className = "" }: ProductSelection
                       onClick={() => handleSelectForVideo(product)}
                       className={`w-full flex items-center justify-center gap-2 py-2 px-4 rounded-lg font-medium transition-colors ${
                         selectedId === product.id
-                          ? 'bg-blue-600 text-white'
-                          : 'bg-gray-100 text-gray-700 hover:bg-blue-600 hover:text-white'
+                          ? 'bg-purple-600 text-white'
+                          : 'bg-gray-100 text-gray-700 hover:bg-purple-600 hover:text-white'
                       }`}
                     >
-                      <ArrowRight size={16} />
-                      {selectedId === product.id ? 'Selected for Video' : 'Select for Video'}
+                      <Sparkles size={16} />
+                      {selectedId === product.id ? 'Generating Visuals...' : 'Create Stunning Visuals'}
                     </button>
                   </div>
                 </div>
