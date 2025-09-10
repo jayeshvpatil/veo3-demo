@@ -23,6 +23,13 @@ interface ProductContextType {
   setSelectedProduct: (product: Product | null) => void;
   addProductToPrompt: (product: Product) => void;
   productPromptText: string;
+  saveVisualToLibrary: (visual: {
+    id: string;
+    url: string;
+    prompt: string;
+    product?: Product;
+    timestamp: number;
+  }) => void;
 }
 
 const ProductContext = createContext<ProductContextType | undefined>(undefined);
@@ -127,12 +134,24 @@ ${product.description}
       });
   };
 
+  const saveVisualToLibrary = (visual: {
+    id: string;
+    url: string;
+    prompt: string;
+    product?: Product;
+    timestamp: number;
+  }) => {
+    // Dispatch event to save visual to library
+    window.dispatchEvent(new CustomEvent('saveVisual', { detail: visual }));
+  };
+
   return (
     <ProductContext.Provider value={{
       selectedProduct,
       setSelectedProduct,
       addProductToPrompt,
       productPromptText,
+      saveVisualToLibrary,
     }}>
       {children}
     </ProductContext.Provider>

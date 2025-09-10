@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Button } from './Button';
 import { Download, Loader2, Sparkles, Check } from 'lucide-react';
+import { useProduct } from '../../contexts/ProductContext';
 
 interface VisualGenerationProps {
   productName: string;
@@ -43,6 +44,7 @@ const validateBase64 = (base64String: string): string => {
 };
 
 export function VisualGeneration({ productName, productDescription, onVisualSelected, onBack }: VisualGenerationProps) {
+  const { saveVisualToLibrary } = useProduct();
   const [prompt, setPrompt] = useState('Create a stunning, professional product photo with perfect lighting and premium background');
   const [selectedStyle, setSelectedStyle] = useState('professional');
   const [numberOfVisuals, setNumberOfVisuals] = useState(2);
@@ -132,6 +134,17 @@ export function VisualGeneration({ productName, productDescription, onVisualSele
         
         setGeneratedVisuals(imagesWithUrls);
         setDescription(data.description || '');
+        
+        // Save visuals to library
+        imagesWithUrls.forEach((visual, index) => {
+          const visualId = `visual-${Date.now()}-${index}`;
+          saveVisualToLibrary({
+            id: visualId,
+            url: visual.imageUrl || '', // Use server URL if available
+            prompt: prompt.trim(),
+            timestamp: Date.now()
+          });
+        });
         
         // Auto-scroll to the generated visuals after a short delay
         setTimeout(() => {

@@ -11,6 +11,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/Tabs";
 import ProductSelectionTab from "@/components/ui/ProductSelectionTab";
 import PromptManagementTab from "@/components/ui/PromptManagementTab";
 import ReviewTab from "@/components/ui/ReviewTab";
+import VisualsLibraryTab from "@/components/ui/VisualsLibraryTab";
 
 type VeoOperationName = string | null;
 
@@ -26,6 +27,15 @@ const VeoStudio: React.FC = () => {
 
   // Tab state management
   const [activeTab, setActiveTab] = useState("products");
+
+  // Saved visuals for library
+  const [savedVisuals, setSavedVisuals] = useState<Array<{
+    id: string;
+    url: string;
+    prompt: string;
+    product?: any;
+    timestamp: number;
+  }>>([]);
 
   // New customization options
   const [visualStyle, setVisualStyle] = useState("");
@@ -50,9 +60,17 @@ const VeoStudio: React.FC = () => {
       }
     };
 
+    const handleSaveVisual = (event: CustomEvent) => {
+      const visual = event.detail;
+      setSavedVisuals(prev => [...prev, visual]);
+    };
+
     window.addEventListener('updateVideoPrompt', handleProductUpdate as EventListener);
+    window.addEventListener('saveVisual', handleSaveVisual as EventListener);
+    
     return () => {
       window.removeEventListener('updateVideoPrompt', handleProductUpdate as EventListener);
+      window.removeEventListener('saveVisual', handleSaveVisual as EventListener);
     };
   }, []);
 
@@ -312,6 +330,9 @@ const VeoStudio: React.FC = () => {
               <TabsTrigger value="review">
                 📱 Generated Videos & Review
               </TabsTrigger>
+              <TabsTrigger value="library">
+                🖼️ Visual Library
+              </TabsTrigger>
             </TabsList>
           </div>
         </div>
@@ -358,6 +379,20 @@ const VeoStudio: React.FC = () => {
               onDownload={downloadVideo}
               onResetTrim={handleResetTrimState}
               prompt={buildCompletePrompt()}
+            />
+          </TabsContent>
+          
+          <TabsContent value="library" className="h-full">
+            <VisualsLibraryTab
+              savedVisuals={savedVisuals}
+              onDeleteVisual={(visualId) => {
+                setSavedVisuals(prev => prev.filter(v => v.id !== visualId));
+              }}
+              onReuseVisual={(visual) => {
+                // Switch to prompt tab and set the prompt
+                setPrompt(visual.prompt);
+                setActiveTab("prompt");
+              }}
             />
           </TabsContent>
         </div>
