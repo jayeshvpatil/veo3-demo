@@ -159,7 +159,12 @@ build_and_push() {
     print_step "Building and Pushing Container Image"
     
     echo -e "${YELLOW}🔨 Building Docker image...${NC}"
-    docker build --platform linux/amd64 -t $IMAGE_NAME:latest .
+    # Get the script directory and build from parent (project root)
+    SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+    PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
+    
+    # Build from project root where Dockerfile is located
+    docker build --platform linux/amd64 -t $IMAGE_NAME:latest -f "$PROJECT_ROOT/Dockerfile" "$PROJECT_ROOT"
     
     echo -e "${YELLOW}📤 Pushing image to Artifact Registry...${NC}"
     docker push $IMAGE_NAME:latest

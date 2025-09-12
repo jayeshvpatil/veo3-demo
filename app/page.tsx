@@ -12,6 +12,7 @@ import ProductSelectionTab from "@/components/ui/ProductSelectionTab";
 import PromptManagementTab from "@/components/ui/PromptManagementTab";
 import ReviewTab from "@/components/ui/ReviewTab";
 import VisualsLibraryTab from "@/components/ui/VisualsLibraryTab";
+import AgenticVideoEditor from "@/components/ui/AgenticVideoEditor";
 
 type VeoOperationName = string | null;
 
@@ -373,6 +374,10 @@ const VeoStudio: React.FC = () => {
               description={description}
               setDescription={setDescription}
             />
+          </TabsContent>
+          
+          <TabsContent value="ai-editor" className="h-full">
+            <AgenticVideoEditor />
           </TabsContent>
           
           <TabsContent value="review" className="h-full">
