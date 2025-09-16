@@ -69,54 +69,45 @@ export default function PromptManagementTab({
   const [isDragging, setIsDragging] = React.useState(false);
   const fileInputRef = React.useRef<HTMLInputElement>(null);
 
-  // Visual style options - focused on cinematography
+  // Visual style options - simplified for Michael Kors brand
   const visualStyles = [
-    { value: "", label: "Default" },
-    { value: "cinematic", label: "Cinematic" },
-    { value: "commercial", label: "Commercial Studio" },
-    { value: "luxury", label: "Luxury Boutique" },
-    { value: "modern", label: "Modern Minimal" },
-    { value: "dramatic", label: "Dramatic Lighting" },
-    { value: "ethereal", label: "Ethereal Dream" },
-    { value: "dynamic", label: "Dynamic Energy" },
+    { value: "", label: "Classic" },
+    { value: "luxury boutique", label: "Luxury Boutique" },
+    { value: "premium studio", label: "Premium Studio" },
+    { value: "elegant showcase", label: "Elegant Showcase" },
   ];
 
-  // Camera movement options - focused on product display
+  // Camera movement options - simplified
   const cameraAngles = [
-    { value: "", label: "Default" },
+    { value: "", label: "Standard" },
     { value: "360 degree orbit", label: "360° Orbit" },
-    { value: "dolly zoom", label: "Dolly Zoom" },
-    { value: "crane shot", label: "Crane Movement" },
-    { value: "close-up detail", label: "Close-up Details" },
-    { value: "pull back reveal", label: "Pull Back Reveal" },
-    { value: "floating around", label: "Floating Around" },
-    { value: "bullet time", label: "Bullet Time" },
+    { value: "close-up reveal", label: "Close-up Reveal" },
     { value: "smooth glide", label: "Smooth Glide" },
   ];
 
   // Quick template options - focused on product display cinematography
   const quickTemplates = [
     {
-      name: "Boutique Showcase",
-      prompt: "The scene opens in a softly lit boutique, where the ambiance is serene and inviting. A classic light fixture illuminates a polished display table at the center. On this table, the product rests elegantly, its tones complementing the warm hues of the shop. The camera smoothly glides around the item in a cinematic style, capturing its sleek design and intricate detailing. As the camera completes its gentle circle, the action enters Bullet Time—highlighting the product's logo and details. This moment of suspended action emphasizes the craftsmanship, allowing viewers to appreciate the texture and design from every angle. Slowly, the frame resumes movement, getting closer to reveal the features. Don't mess up with logo or text on the product.",
+      name: "Luxury Atelier",
+      prompt: "In an intimate atelier bathed in golden hour light, the product rests on polished Italian marble. Soft shadows dance across the surface as the camera gracefully orbits, revealing the exquisite craftsmanship and sophisticated details. Every stitch, every curve speaks to timeless elegance. The Michael Kors heritage shines through in the interplay of light and luxury, creating a moment of pure sophistication.",
       visualStyle: "luxury",
       cameraAngle: "360 degree",
     },
     {
-      name: "Studio Spotlight",
-      prompt: "In a pristine white studio, dramatic spotlights create bold shadows and highlights. The product sits on a reflective pedestal as the camera executes a smooth dolly shot, moving from wide to extreme close-up. Professional lighting rigs create dynamic patterns, while the camera captures every detail with precision. The logo and text remain perfectly clear throughout the sequence.",
+      name: "Metropolitan Elegance",
+      prompt: "Against the backdrop of a sleek metropolitan setting, refined lighting illuminates the product with understated sophistication. The camera moves with purpose and grace, capturing the essence of modern luxury. Clean lines and premium materials come together in perfect harmony, embodying the confident style that defines contemporary elegance.",
       visualStyle: "commercial", 
       cameraAngle: "medium shot",
     },
     {
-      name: "Floating Dream",
-      prompt: "Against a dreamy, soft-focus background, the product appears to float gracefully. Particle effects and subtle light rays enhance the magical atmosphere. The camera performs a slow orbital movement, capturing the item from multiple angles as it gently rotates. Ethereal lighting creates a premium, aspirational mood while keeping all product details and text crystal clear.",
+      name: "Celestial Grace",
+      prompt: "Suspended in an ethereal realm of soft pearl light, the product appears to float with graceful poise. Delicate light rays create an aura of sophistication as the camera performs a ballet-like movement around the piece. This dreamlike sequence captures the aspirational beauty and refined luxury that transforms everyday moments into extraordinary experiences.",
       visualStyle: "cinematic",
       cameraAngle: "overhead",
     },
     {
-      name: "Dynamic Reveal",
-      prompt: "The camera starts with an extreme close-up of textures and materials, then pulls back to reveal the full product in a dramatic reveal. Quick cuts between detail shots and wide angles create energy and excitement. Professional lighting emphasizes the premium quality and craftsmanship. All logos and text remain sharp and readable throughout.",
+      name: "Artisan Reveal",
+      prompt: "Beginning with an intimate exploration of luxurious textures and masterful details, the camera slowly unveils the complete vision. Each movement celebrates the artisanal quality and sophisticated design philosophy. Premium materials and impeccable craftsmanship are revealed with reverence, showcasing the dedication to excellence that defines true luxury.",
       visualStyle: "modern",
       cameraAngle: "close-up",
     },

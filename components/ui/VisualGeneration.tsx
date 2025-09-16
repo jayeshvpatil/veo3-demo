@@ -266,46 +266,15 @@ export function VisualGeneration({ productName, productDescription, productImage
         {/* Preview Section */}
         {prompt.trim() && (
           <div className="mt-4 p-4 bg-gray-50 border border-gray-200 rounded-lg">
-            <h3 className="text-sm font-semibold mb-3 text-gray-800">Preview Generation Details</h3>
-            
-            {/* Product Description */}
-            <div className="mb-3">
-              <h4 className="text-xs font-medium text-gray-600 mb-1">Product Description:</h4>
-              <div className="text-sm text-gray-700 bg-white p-2 rounded border">
-                {productDescription || 'No product description available'}
-              </div>
-            </div>
-
-            {/* Selected Style */}
-            <div className="mb-3">
-              <h4 className="text-xs font-medium text-gray-600 mb-1">Visual Style:</h4>
-              <div className="text-sm text-gray-700 bg-white p-2 rounded border">
-                {visualStyles.find(style => style.id === selectedStyle)?.name} - {visualStyles.find(style => style.id === selectedStyle)?.description}
-              </div>
-            </div>
-
-            {/* Your Vision */}
-            <div className="mb-3">
-              <h4 className="text-xs font-medium text-gray-600 mb-1">Your Creative Vision:</h4>
-              <div className="text-sm text-gray-700 bg-white p-2 rounded border">
-                {prompt}
-              </div>
-            </div>
-
-            {/* Generated Prompt Preview */}
-            <div>
-              <h4 className="text-xs font-medium text-gray-600 mb-1">Enhanced AI Prompt (Preview):</h4>
-              <div className="text-xs text-gray-600 bg-white p-2 rounded border max-h-24 overflow-y-auto">
-                A high-resolution, studio-lit product photograph of a {productDescription || productName} on a {selectedStyle === 'professional' ? 'clean white seamless paper backdrop' : 'premium surface that complements the product'}.
-                <br /><br />
-                <strong>Product:</strong> {productDescription || 'the original product description'}
-                <br />
-                <strong>Style:</strong> {visualStyles.find(style => style.id === selectedStyle)?.name}
-                <br />
-                <strong>Creative Vision:</strong> {prompt}
-                <br /><br />
-                <em>+ Enhanced with strict product integrity requirements and professional photography setup...</em>
-              </div>
+            <h3 className="text-sm font-semibold mb-2 text-gray-800">Final Enhanced Prompt Preview</h3>
+            <div className="text-xs text-gray-600 bg-white p-3 rounded border max-h-32 overflow-y-auto font-mono">
+              A high-resolution, studio-lit product photograph of a {productDescription || productName} on a {selectedStyle === 'professional' ? 'clean white seamless paper backdrop' : 'premium surface that complements the product'}.
+              <br /><br />
+              <strong>CRITICAL MATERIAL ACCURACY:</strong> The product MUST maintain exact grayish-natural tone, breathable mesh texture, soft suede texture, and smooth leather panels exactly as described.
+              <br /><br />
+              <strong>Creative Direction:</strong> {prompt}
+              <br /><br />
+              <strong>Photography Setup:</strong> Three-point softbox lighting, 45-degree elevated view, ultra-realistic focus with perfect material fidelity and exact color reproduction. 16:9 aspect ratio.
             </div>
           </div>
         )}
