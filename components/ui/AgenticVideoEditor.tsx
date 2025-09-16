@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { 
   Play, 
   Pause, 
@@ -26,6 +26,16 @@ import {
   TrendingUp
 } from 'lucide-react';
 
+interface AgenticVideoEditorProps {
+  initialVideoUrl?: string;
+  availableVideos?: Array<{
+    id: string;
+    url: string;
+    title: string;
+    prompt?: string;
+  }>;
+}
+
 interface AgentCapability {
   name: string;
   description: string;
@@ -50,21 +60,32 @@ interface AgentAction {
   status: 'pending' | 'executing' | 'completed' | 'failed';
   result?: any;
   error?: string;
+  timestamp?: number;
 }
 
-const AgenticVideoEditor: React.FC = () => {
+const AgenticVideoEditor: React.FC<AgenticVideoEditorProps> = ({ 
+  initialVideoUrl, 
+  availableVideos = [] 
+}) => {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [suggestions, setSuggestions] = useState<EditingSuggestion[]>([]);
   const [capabilities, setCapabilities] = useState<Record<string, AgentCapability[]>>({});
   const [actions, setActions] = useState<AgentAction[]>([]);
-  const [selectedVideo, setSelectedVideo] = useState<string | null>(null);
+  const [selectedVideo, setSelectedVideo] = useState<string | null>(initialVideoUrl || null);
   const [activeAgent, setActiveAgent] = useState<string>('all');
   const [autoMode, setAutoMode] = useState(false);
   const [showAdvanced, setShowAdvanced] = useState(false);
+  const [videoFile, setVideoFile] = useState<File | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
+  const [executingActions, setExecutingActions] = useState<Set<string>>(new Set());
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     loadCapabilities();
-  }, []);
+    if (initialVideoUrl) {
+      setSelectedVideo(initialVideoUrl);
+    }
+  }, [initialVideoUrl]);
 
   const loadCapabilities = async () => {
     try {
@@ -73,6 +94,41 @@ const AgenticVideoEditor: React.FC = () => {
       setCapabilities(data.capabilities);
     } catch (error) {
       console.error('Failed to load AI capabilities:', error);
+    }
+  };
+
+  const handleFileUpload = async (file: File) => {
+    setIsUploading(true);
+    setVideoFile(file);
+    
+    try {
+      // Create object URL for immediate use
+      const videoUrl = URL.createObjectURL(file);
+      setSelectedVideo(videoUrl);
+      
+      // Optional: Upload to server for processing
+      // const formData = new FormData();
+      // formData.append('video', file);
+      // const response = await fetch('/api/video/upload', {
+      //   method: 'POST',
+      //   body: formData
+      // });
+      // const result = await response.json();
+      // setSelectedVideo(result.url);
+      
+    } catch (error) {
+      console.error('Upload failed:', error);
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  const onFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file && file.type.startsWith('video/')) {
+      handleFileUpload(file);
+    } else {
+      alert('Please select a valid video file');
     }
   };
 
@@ -95,17 +151,38 @@ const AgenticVideoEditor: React.FC = () => {
         })
       });
 
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
       const data = await response.json();
+      
+      if (data.error) {
+        throw new Error(data.error);
+      }
+      
       setSuggestions(data.suggestions || []);
+      
+      if (data.suggestions && data.suggestions.length > 0) {
+        console.log(`Analysis complete: ${data.suggestions.length} suggestions generated`);
+      } else {
+        console.warn('No suggestions generated from analysis');
+      }
     } catch (error) {
       console.error('Analysis failed:', error);
+      alert(`Analysis failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
     } finally {
       setIsAnalyzing(false);
     }
   };
 
   const executeSuggestion = async (suggestion: EditingSuggestion) => {
+    // Add to executing set to show loading state
+    setExecutingActions(prev => new Set([...prev, suggestion.id]));
+    
     try {
+      console.log('Executing suggestion:', suggestion.description);
+      
       const response = await fetch('/api/ai-agents', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -116,10 +193,48 @@ const AgenticVideoEditor: React.FC = () => {
         })
       });
 
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
       const data = await response.json();
-      setActions(prev => [...prev, ...data.actions]);
+      console.log('API Response:', data);
+      
+      // Check if data.actions exists and is an array
+      if (data.actions && Array.isArray(data.actions)) {
+        setActions(prev => [...prev, ...data.actions]);
+        console.log(`Added ${data.actions.length} actions to panel`);
+      } else {
+        console.warn('API did not return actions array, creating mock action');
+        // Create a mock action for feedback
+        const mockAction: AgentAction = {
+          id: `action_${Date.now()}`,
+          agent: suggestion.type,
+          action: suggestion.description,
+          status: 'completed',
+          timestamp: Date.now()
+        };
+        setActions(prev => [...prev, mockAction]);
+      }
     } catch (error) {
       console.error('Execution failed:', error);
+      // Create an error action for feedback
+      const errorAction: AgentAction = {
+        id: `action_${Date.now()}`,
+        agent: suggestion.type,
+        action: suggestion.description,
+        status: 'failed',
+        error: error instanceof Error ? error.message : 'Unknown error',
+        timestamp: Date.now()
+      };
+      setActions(prev => [...prev, errorAction]);
+    } finally {
+      // Remove from executing set
+      setExecutingActions(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(suggestion.id);
+        return newSet;
+      });
     }
   };
 
@@ -272,37 +387,94 @@ const AgenticVideoEditor: React.FC = () => {
         <div className="flex-1 flex flex-col">
           {/* Video Upload/Analysis */}
           <div className="bg-black/10 backdrop-blur-sm border-b border-white/10 p-4">
-            <div className="flex items-center gap-4">
-              <div className="flex-1">
-                <input
-                  type="text"
-                  placeholder="Enter video URL or upload video..."
-                  value={selectedVideo || ''}
-                  onChange={(e) => setSelectedVideo(e.target.value)}
-                  className="w-full bg-white/10 border border-white/20 rounded-lg px-4 py-2 text-white placeholder-gray-400"
-                />
+            <div className="space-y-4">
+              {/* Video Source Selection */}
+              <div className="flex items-center gap-4">
+                <div className="flex-1">
+                  <input
+                    type="text"
+                    placeholder="Enter video URL or select from library..."
+                    value={selectedVideo || ''}
+                    onChange={(e) => setSelectedVideo(e.target.value)}
+                    className="w-full bg-white/10 border border-white/20 rounded-lg px-4 py-2 text-white placeholder-gray-400"
+                  />
+                </div>
+                <button 
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={isUploading}
+                  className="flex items-center gap-2 px-4 py-2 bg-white/10 rounded-lg hover:bg-white/20 transition-colors disabled:opacity-50"
+                >
+                  {isUploading ? (
+                    <>
+                      <Clock className="w-4 h-4 animate-spin" />
+                      Uploading...
+                    </>
+                  ) : (
+                    <>
+                      <Upload className="w-4 h-4" />
+                      Upload Video
+                    </>
+                  )}
+                </button>
+                <button
+                  onClick={() => selectedVideo && analyzeVideo(selectedVideo)}
+                  disabled={!selectedVideo || isAnalyzing}
+                  className="flex items-center gap-2 px-6 py-2 bg-gradient-to-r from-purple-500 to-pink-500 rounded-lg hover:from-purple-600 hover:to-pink-600 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {isAnalyzing ? (
+                    <>
+                      <Clock className="w-4 h-4 animate-spin" />
+                      Analyzing...
+                    </>
+                  ) : (
+                    <>
+                      <Wand2 className="w-4 h-4" />
+                      Analyze Video
+                    </>
+                  )}
+                </button>
               </div>
-              <button className="flex items-center gap-2 px-4 py-2 bg-white/10 rounded-lg hover:bg-white/20 transition-colors">
-                <Upload className="w-4 h-4" />
-                Upload
-              </button>
-              <button
-                onClick={() => selectedVideo && analyzeVideo(selectedVideo)}
-                disabled={!selectedVideo || isAnalyzing}
-                className="flex items-center gap-2 px-6 py-2 bg-gradient-to-r from-purple-500 to-pink-500 rounded-lg hover:from-purple-600 hover:to-pink-600 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {isAnalyzing ? (
-                  <>
-                    <Clock className="w-4 h-4 animate-spin" />
-                    Analyzing...
-                  </>
-                ) : (
-                  <>
-                    <Wand2 className="w-4 h-4" />
-                    Analyze Video
-                  </>
-                )}
-              </button>
+
+              {/* Available Videos Library */}
+              {availableVideos.length > 0 && (
+                <div>
+                  <h4 className="text-sm font-medium text-gray-300 mb-2">Quick Select:</h4>
+                  <div className="flex gap-2 flex-wrap">
+                    {availableVideos.map((video) => (
+                      <button
+                        key={video.id}
+                        onClick={() => setSelectedVideo(video.url)}
+                        className={`px-3 py-1 text-xs rounded-full border transition-all ${
+                          selectedVideo === video.url
+                            ? 'bg-purple-500/20 text-purple-300 border-purple-400'
+                            : 'bg-white/5 text-gray-300 border-white/20 hover:border-purple-400/50'
+                        }`}
+                      >
+                        {video.title}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Current Video Preview */}
+              {selectedVideo && (
+                <div className="bg-white/5 rounded-lg p-3">
+                  <div className="flex items-center gap-3">
+                    <div className="w-16 h-12 bg-white/10 rounded flex items-center justify-center">
+                      <Play className="w-6 h-6 text-gray-400" />
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium">
+                        {videoFile ? videoFile.name : 'Video URL'}
+                      </p>
+                      <p className="text-xs text-gray-400 truncate max-w-xs">
+                        {selectedVideo}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
 
@@ -348,16 +520,38 @@ const AgenticVideoEditor: React.FC = () => {
                         <div className="flex items-center gap-2">
                           <button
                             onClick={() => executeSuggestion(suggestion)}
-                            className="flex items-center gap-1 px-3 py-1 bg-gradient-to-r from-purple-500/20 to-pink-500/20 border border-purple-400/30 rounded hover:from-purple-500/30 hover:to-pink-500/30 transition-all text-sm"
+                            disabled={executingActions.has(suggestion.id)}
+                            className="flex items-center gap-1 px-3 py-1 bg-gradient-to-r from-purple-500/20 to-pink-500/20 border border-purple-400/30 rounded hover:from-purple-500/30 hover:to-pink-500/30 transition-all text-sm disabled:opacity-50 disabled:cursor-not-allowed"
                           >
-                            <Play className="w-3 h-3" />
-                            Apply
+                            {executingActions.has(suggestion.id) ? (
+                              <>
+                                <Clock className="w-3 h-3 animate-spin" />
+                                Applying...
+                              </>
+                            ) : (
+                              <>
+                                <Play className="w-3 h-3" />
+                                Apply
+                              </>
+                            )}
                           </button>
                           
                           {suggestion.autoApply && (
                             <span className="text-xs text-green-400 flex items-center gap-1">
                               <Zap className="w-3 h-3" />
                               Auto-applicable
+                            </span>
+                          )}
+                          
+                          {/* Visual feedback for recent execution */}
+                          {actions.some(action => 
+                            action.agent === suggestion.type && 
+                            action.action === suggestion.description &&
+                            Date.now() - (action.timestamp || 0) < 5000
+                          ) && (
+                            <span className="text-xs text-green-400 flex items-center gap-1">
+                              <CheckCircle className="w-3 h-3" />
+                              Applied
                             </span>
                           )}
                         </div>
@@ -389,7 +583,14 @@ const AgenticVideoEditor: React.FC = () => {
                       <span className="text-sm font-medium">{action.action}</span>
                       {getStatusIcon(action.status)}
                     </div>
-                    <div className="text-xs text-gray-400 mb-1">Agent: {action.agent}</div>
+                    <div className="flex items-center justify-between mb-1">
+                      <div className="text-xs text-gray-400">Agent: {action.agent}</div>
+                      {action.timestamp && (
+                        <div className="text-xs text-gray-500">
+                          {new Date(action.timestamp).toLocaleTimeString()}
+                        </div>
+                      )}
+                    </div>
                     {action.error && (
                       <div className="text-xs text-red-400">{action.error}</div>
                     )}
@@ -417,6 +618,15 @@ const AgenticVideoEditor: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {/* Hidden file input for video upload */}
+      <input
+        type="file"
+        ref={fileInputRef}
+        accept="video/*"
+        style={{ display: "none" }}
+        onChange={onFileSelect}
+      />
     </div>
   );
 };

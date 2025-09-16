@@ -13,6 +13,7 @@ import PromptManagementTab from "@/components/ui/PromptManagementTab";
 import ReviewTab from "@/components/ui/ReviewTab";
 import VisualsLibraryTab from "@/components/ui/VisualsLibraryTab";
 import AgenticVideoEditor from "@/components/ui/AgenticVideoEditor";
+import SmartVideoGenerator from "@/components/ui/SmartVideoGenerator";
 
 type VeoOperationName = string | null;
 
@@ -338,6 +339,12 @@ const VeoStudio: React.FC = () => {
               <TabsTrigger value="library">
                 🖼️ Visual Library
               </TabsTrigger>
+              <TabsTrigger value="ai-editor">
+                🤖 AI Video Editor
+              </TabsTrigger>
+              <TabsTrigger value="smart-video">
+                🧠 Smart AI Video
+              </TabsTrigger>
             </TabsList>
           </div>
         </div>
@@ -403,6 +410,39 @@ const VeoStudio: React.FC = () => {
                 setActiveTab("prompt");
               }}
             />
+          </TabsContent>
+
+          <TabsContent value="ai-editor" className="h-full">
+            <AgenticVideoEditor 
+              initialVideoUrl={videoUrl}
+              availableVideos={[
+                ...(videoUrl ? [{
+                  id: 'current-generated',
+                  url: videoUrl,
+                  title: 'Current Generated Video',
+                  prompt: prompt
+                }] : []),
+                ...savedVisuals.map(visual => ({
+                  id: visual.id,
+                  url: visual.url,
+                  title: visual.product?.title || 'Saved Visual',
+                  prompt: visual.prompt
+                }))
+              ]}
+            />
+          </TabsContent>
+
+          <TabsContent value="smart-video" className="h-full overflow-y-auto">
+            <div className="p-6">
+              <SmartVideoGenerator
+                onVideoGenerated={(result) => {
+                  if (result.videoUrl) {
+                    setVideoUrl(result.videoUrl);
+                    setActiveTab("review");
+                  }
+                }}
+              />
+            </div>
           </TabsContent>
         </div>
       </Tabs>

@@ -3,7 +3,8 @@ import { VideoEditingAI } from "@/lib/ai-agents/core";
 
 export async function POST(req: Request) {
   try {
-    const { videoUrl, action, preferences = {} } = await req.json();
+    const requestBody = await req.json();
+    const { videoUrl, action, preferences = {}, suggestions: planSuggestions } = requestBody;
 
     if (!videoUrl) {
       return NextResponse.json({ error: "Video URL is required" }, { status: 400 });
@@ -27,9 +28,7 @@ export async function POST(req: Request) {
         });
 
       case 'execute_plan':
-        const requestBody = await req.json();
-        const { suggestions: planSuggestions } = requestBody;
-        if (!planSuggestions) {
+        if (!planSuggestions || !Array.isArray(planSuggestions)) {
           return NextResponse.json({ error: "Suggestions array is required for execution" }, { status: 400 });
         }
         const actions = await ai.executeEditingPlan(planSuggestions);

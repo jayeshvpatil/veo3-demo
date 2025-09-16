@@ -1,11 +1,15 @@
 // Core types and interfaces for AI Agent System
 
 export interface VideoAnalysis {
-  duration: number;
-  scenes: Scene[];
-  audioLevels: AudioSegment[];
-  visualElements: VisualElement[];
-  suggestions: EditingSuggestion[];
+  type?: string;
+  confidence?: number;
+  data?: Record<string, any>;
+  timestamp?: number;
+  duration?: number;
+  scenes?: Scene[];
+  audioLevels?: AudioSegment[];
+  visualElements?: VisualElement[];
+  suggestions?: EditingSuggestion[];
 }
 
 export interface Scene {
@@ -38,17 +42,21 @@ export interface VisualElement {
 
 export interface EditingSuggestion {
   id: string;
-  type: 'cut' | 'enhance' | 'effect' | 'audio' | 'caption' | 'transition';
+  type: 'cut' | 'enhance' | 'effect' | 'audio' | 'caption' | 'transition' | 'enhancement';
   priority: 'low' | 'medium' | 'high' | 'critical';
+  title?: string;
   description: string;
-  timeRange: { start: number; end: number };
-  parameters: Record<string, any>;
-  reasoning: string;
-  autoApply: boolean;
+  timeRange?: { start: number; end: number };
+  parameters?: Record<string, any>;
+  reasoning?: string;
+  autoApply?: boolean;
+  estimatedImpact?: number;
+  actions?: AgentAction[];
 }
 
 export interface AgentAction {
   id: string;
+  type: string;
   agent: string;
   action: string;
   parameters: Record<string, any>;
@@ -79,6 +87,38 @@ export abstract class VideoAgent {
 
   protected generateId(): string {
     return `${this.name}_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+  }
+
+  protected createSuggestion(
+    type: EditingSuggestion['type'],
+    priority: EditingSuggestion['priority'],
+    title: string,
+    description: string,
+    timeRange?: { start: number; end: number },
+    parameters?: Record<string, any>,
+    estimatedImpact: number = 0.5
+  ): EditingSuggestion {
+    return {
+      id: this.generateId(),
+      type,
+      priority,
+      title,
+      description,
+      timeRange,
+      parameters,
+      reasoning: description,
+      autoApply: false,
+      estimatedImpact,
+      actions: [{
+        id: this.generateId(),
+        type: 'apply_suggestion',
+        agent: this.name,
+        action: type,
+        parameters: parameters || {},
+        timestamp: Date.now(),
+        status: 'pending'
+      }]
+    };
   }
 
   protected calculateConfidence(factors: number[]): number {

@@ -40,22 +40,20 @@ export class AudioProcessingAgent extends VideoAgent {
 
       // Detect poor speech clarity
       if (audio.hasVoice && audio.clarity < 0.7) {
-        suggestions.push({
-          id: this.generateId(),
-          type: 'audio',
-          priority: 'high',
-          description: 'Poor speech clarity - apply voice enhancement',
-          timeRange: { start: audio.startTime, end: audio.endTime },
-          parameters: {
-            enhancementType: 'speech_enhancement',
-            denoiseStrength: 0.6,
-            clarityBoost: 0.4,
-            frequencyRange: 'speech_optimized',
-            preserveNaturalness: true
+        suggestions.push(this.createSuggestion(
+          'audio',
+          'high',
+          'Voice Enhancement',
+          `Enhance voice clarity at ${audio.startTime}s-${audio.endTime}s`,
+          { start: audio.startTime, end: audio.endTime },
+          {
+            enhancementType: 'voice',
+            targetVolume: 0.7,
+            preserveDynamics: true,
+            method: 'spectralSubtraction'
           },
-          reasoning: 'Poor clarity score indicates speech enhancement needed',
-          autoApply: preferences.autoEnhanceSpeech || false
-        });
+          0.8
+        ));
       }
 
       // Detect competing audio (voice + music)

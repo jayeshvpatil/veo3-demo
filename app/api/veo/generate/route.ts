@@ -49,15 +49,47 @@ export async function POST(req: Request) {
       image = { imageBytes: cleaned, mimeType: imageMimeType || "image/png" };
     }
 
-    const operation = await ai.models.generateVideos({
-      model,
-      prompt,
-      ...(image ? { image } : {}),
-      config: {
-        ...(aspectRatio ? { aspectRatio } : {}),
-        ...(negativePrompt ? { negativePrompt } : {}),
-      },
-    });
+    // Implement retry logic with exponential backoff
+    let operation;
+    let retryCount = 0;
+    const maxRetries = 3;
+    
+    while (retryCount < maxRetries) {
+      try {
+        operation = await ai.models.generateVideos({
+          model,
+          prompt,
+          ...(image ? { image } : {}),
+          config: {
+            ...(aspectRatio ? { aspectRatio } : {}),
+            ...(negativePrompt ? { negativePrompt } : {}),
+          },
+        });
+        break; // Success, exit retry loop
+      } catch (error: any) {
+        retryCount++;
+        
+        // Check if it's a rate limit error
+        if (error?.status === 429 || error?.message?.includes('quota') || error?.message?.includes('RESOURCE_EXHAUSTED')) {
+          if (retryCount < maxRetries) {
+            const delay = Math.pow(2, retryCount) * 1000; // Exponential backoff
+            console.log(`Rate limited. Retrying in ${delay}ms (attempt ${retryCount}/${maxRetries})`);
+            await new Promise(resolve => setTimeout(resolve, delay));
+            continue;
+          } else {
+            // Max retries reached, return user-friendly error
+            return NextResponse.json({
+              error: "API quota exceeded. Please try again later or check your billing plan.",
+              details: "You've exceeded your current quota for video generation. Please check your plan and billing details at https://ai.google.dev/gemini-api/docs/rate-limits",
+              retryAfter: "Please wait a few minutes before trying again."
+            }, { status: 429 });
+          }
+        } else {
+          // Different error, don't retry
+          throw error;
+        }
+      }
+    }
 
     const name = (operation as unknown as { name?: string }).name;
     return NextResponse.json({ name });
