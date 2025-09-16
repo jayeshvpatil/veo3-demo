@@ -17,6 +17,11 @@ A comprehensive Next.js application showcasing Google's Veo 3 video generation a
 - **Professional Styles**: Multiple visual styles (Professional, Lifestyle, Artistic, Minimalist, Luxury, Social Media)
 - **Product Integrity**: Enhanced prompts that preserve exact product characteristics
 - **Server-Side Serving**: Optimized image display with fallback mechanisms
+- **🤖 Agentic Chat Interface**: Conversational AI agents for iterative visual refinement
+  - **Creative Director**: Focuses on artistic composition and brand aesthetics
+  - **Product Photographer**: Expert in lighting, angles, and technical photography  
+  - **Marketing Specialist**: Optimizes visuals for conversion and engagement
+  - **Interactive Refinement**: Chat-based workflow for perfect visual creation
 
 ### 🖼️ Image Generation  
 - **Imagen 4.0**: Generate images from text prompts using Google's Imagen model

@@ -2,9 +2,10 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
 import Image from 'next/image';
-import { Filter, Star, Grid3X3, List, Sparkles } from 'lucide-react';
+import { Filter, Star, Grid3X3, List, Sparkles, MessageCircle } from 'lucide-react';
 import { useProduct } from '../../contexts/ProductContext';
 import { VisualGeneration } from './VisualGeneration';
+import { AgenticVisualChat } from './AgenticVisualChat';
 
 export interface Product {
   id: string;
@@ -43,6 +44,7 @@ export default function ProductSelectionTab({ className = "" }: ProductSelection
   const [showFilters, setShowFilters] = useState(false);
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [showVisualGeneration, setShowVisualGeneration] = useState(false);
+  const [showAgenticChat, setShowAgenticChat] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [generatedVisual, setGeneratedVisual] = useState<{data: string, mimeType: string} | null>(null);
   
@@ -145,8 +147,15 @@ export default function ProductSelectionTab({ className = "" }: ProductSelection
 
   const handleBackToProducts = () => {
     setShowVisualGeneration(false);
+    setShowAgenticChat(false);
     setSelectedProduct(null);
     setGeneratedVisual(null);
+  };
+
+  const handleChatWithAgent = (product: Product) => {
+    setSelectedId(product.id);
+    setSelectedProduct(product);
+    setShowAgenticChat(true);
   };
 
   const clearAllFilters = () => {
@@ -177,6 +186,22 @@ export default function ProductSelectionTab({ className = "" }: ProductSelection
         <VisualGeneration
           productName={selectedProduct.title}
           productDescription={selectedProduct.description}
+          productImage={selectedProduct.image}
+          onVisualSelected={handleVisualSelected}
+          onBack={handleBackToProducts}
+        />
+      </div>
+    );
+  }
+
+  // Show agentic chat interface
+  if (showAgenticChat && selectedProduct) {
+    return (
+      <div className="h-full overflow-hidden">
+        <AgenticVisualChat
+          productName={selectedProduct.title}
+          productDescription={selectedProduct.description}
+          productImage={selectedProduct.image}
           onVisualSelected={handleVisualSelected}
           onBack={handleBackToProducts}
         />
@@ -403,17 +428,27 @@ export default function ProductSelectionTab({ className = "" }: ProductSelection
                       )}
                     </div>
 
-                    <button
-                      onClick={() => handleSelectForVideo(product)}
-                      className={`w-full flex items-center justify-center gap-2 py-2 px-4 rounded-lg font-medium transition-colors ${
-                        selectedId === product.id
-                          ? 'bg-purple-600 text-white'
-                          : 'bg-gray-100 text-gray-700 hover:bg-purple-600 hover:text-white'
-                      }`}
-                    >
-                      <Sparkles size={16} />
-                      {selectedId === product.id ? 'Generating Visuals...' : 'Create Stunning Visuals'}
-                    </button>
+                    <div className="space-y-2">
+                      <button
+                        onClick={() => handleSelectForVideo(product)}
+                        className={`w-full flex items-center justify-center gap-2 py-2 px-4 rounded-lg font-medium transition-colors ${
+                          selectedId === product.id
+                            ? 'bg-purple-600 text-white'
+                            : 'bg-gray-100 text-gray-700 hover:bg-purple-600 hover:text-white'
+                        }`}
+                      >
+                        <Sparkles size={16} />
+                        {selectedId === product.id ? 'Generating Visuals...' : 'Create Stunning Visuals'}
+                      </button>
+                      
+                      <button
+                        onClick={() => handleChatWithAgent(product)}
+                        className="w-full flex items-center justify-center gap-2 py-1.5 px-4 rounded-lg font-medium transition-colors bg-white border border-purple-200 text-purple-600 hover:bg-purple-50"
+                      >
+                        <MessageCircle size={14} />
+                        Chat with AI Agent
+                      </button>
+                    </div>
                   </div>
                 </div>
               ))}

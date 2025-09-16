@@ -22,44 +22,40 @@ export async function POST(req: Request) {
 
     const model = 'gemini-2.5-flash-image-preview';
     
-    // Enhanced prompt for stunning product visuals - MAINTAIN ORIGINAL PRODUCT DESIGN
-    const enhancedPrompt = `Create a stunning, professional product photography scene featuring EXACTLY the same product described below.
+    // Google Gemini recommended product photography template with STRICT MATERIAL FIDELITY
+    const enhancedPrompt = `A high-resolution, studio-lit product photograph of a ${productDescription || productName || 'Michael Kors Atlas trainer'} on a ${style === 'Professional Photography' ? 'clean white seamless paper backdrop' : 'premium surface that complements the product'}.
 
-🔒 CRITICAL PRODUCT INTEGRITY REQUIREMENTS:
-- The product MUST remain 100% identical to the original design
-- Keep ALL colors, patterns, textures, and materials EXACTLY as described
-- Preserve ALL logos, text, branding, labels, and graphics without any distortion
-- Maintain the product's exact shape, proportions, size, and features
-- Do NOT modify, alter, or change ANY aspect of the actual product
-- The product should look IDENTICAL to the original - only enhance the photography
+CRITICAL MATERIAL ACCURACY REQUIREMENTS:
+- If this is an Atlas trainer in "Natural" color: MUST maintain the exact grayish-natural tone (NOT beige/tan/warm tones)
+- If mesh materials are described: PRESERVE the exact breathable mesh texture and appearance
+- If suede is mentioned: MAINTAIN the soft suede texture and original color exactly
+- If leather panels exist: KEEP smooth leather panels with their authentic finish
+- If sculptural rubber sole described: PRESERVE the exact sole design and color
 
-📋 EXACT PRODUCT TO PRESERVE:
-Product Name: ${productName || 'product'}
-Detailed Description: ${productDescription || 'No description provided'}
+EXACT PRODUCT REPRODUCTION MANDATORY:
+The product MUST be reproduced with 100% material and color accuracy to: "${productDescription || 'the original product description'}"
 
-🎨 PHOTOGRAPHY STYLE ENHANCEMENT:
-Style Direction: ${style}
-Creative Vision: ${prompt}
+FORBIDDEN COLOR SHIFTS (CRITICAL):
+- NO changing "Natural" to beige, tan, brown, or any warmer tones
+- NO altering mesh texture, pattern, or color
+- NO modifying suede color, texture, or material appearance  
+- NO changing leather panel colors, finishes, or materials
+- NO altering sole design, color, proportions, or sculptural details
+- PRESERVE the exact cool-toned grayish "Natural" color as described
 
-✨ PHOTOGRAPHY IMPROVEMENTS ONLY:
-- Professional studio lighting and dramatic shadows
-- Premium background environment that complements the product
-- Sophisticated camera angles and composition
-- High-end commercial photography aesthetic
-- Perfect color grading and exposure
-- Marketing-ready visual appeal
-- Artistic mood and atmosphere
+The lighting is a three-point softbox setup to highlight the authentic materials without any color temperature shifts or distortion. The camera angle is a 45-degree elevated view to showcase the product's authentic form and precise material details. Ultra-realistic, with sharp focus on maintaining exact color accuracy and material fidelity.
 
-🚫 STRICTLY FORBIDDEN:
-- Changing product colors or design elements
-- Modifying logos, text, or branding
-- Altering product shape or features
-- Adding or removing product elements
-- Distorting any visual characteristics
+Creative direction: ${prompt}
 
-✅ GOAL: Create a professional, visually stunning photograph that showcases the EXACT SAME product in an enhanced photography setup. Only change lighting, background, camera work, and artistic presentation - NEVER the product itself.
+STRICT MATERIAL PRESERVATION CHECKLIST:
+✓ Reproduce EXACT color described (especially "Natural" = cool grayish tone, NOT warm beige/tan)
+✓ Maintain ALL texture details (mesh, suede, leather) exactly as originally described
+✓ Preserve ALL design elements including sole shape, proportions, and sculptural features
+✓ Keep ALL logos, text, branding identical, legible, and undistorted
+✓ NO modifications to product materials, colors, textures, or design elements
+✓ Focus enhancement ONLY on lighting, background, and camera positioning
 
-Generate a high-quality product photograph that maintains 100% product integrity while achieving maximum visual impact.`;
+Generate a professional product photograph that showcases the authentic product with perfect material fidelity and exact color reproduction. The product must be immediately recognizable as the exact same item with identical materials, colors, and design. 16:9 aspect ratio.`;
 
     // Generate multiple images (limit to 4 max for performance)
     const imageCount = Math.min(Math.max(count, 1), 4);

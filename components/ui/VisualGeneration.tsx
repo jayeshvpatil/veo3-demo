@@ -6,6 +6,7 @@ import { useProduct } from '../../contexts/ProductContext';
 interface VisualGenerationProps {
   productName: string;
   productDescription?: string;
+  productImage?: string;
   onVisualSelected: (imageData: string, mimeType: string) => void;
   onBack: () => void;
 }
@@ -26,7 +27,7 @@ const visualStyles = [
   { id: 'social', name: 'Social Media Ready', description: 'Optimized for Instagram and social platforms' }
 ];
 
-export function VisualGeneration({ productName, productDescription, onVisualSelected, onBack }: VisualGenerationProps) {
+export function VisualGeneration({ productName, productDescription, productImage, onVisualSelected, onBack }: VisualGenerationProps) {
   const { saveVisualToLibrary } = useProduct();
   const [prompt, setPrompt] = useState('Create a stunning, professional product photo with perfect lighting and premium background');
   const [selectedStyle, setSelectedStyle] = useState('professional');
@@ -177,6 +178,26 @@ export function VisualGeneration({ productName, productDescription, onVisualSele
           </Button>
         </div>
 
+        {/* Original Product Display */}
+        {productImage && (
+          <div className="bg-white border border-gray-200 rounded-lg p-4">
+            <h3 className="text-sm font-medium text-gray-700 mb-3">Original Product</h3>
+            <div className="flex items-center gap-4">
+              <img
+                src={productImage}
+                alt={productName}
+                className="w-20 h-20 object-cover rounded-lg border border-gray-200"
+              />
+              <div>
+                <p className="text-sm font-medium text-gray-900">{productName}</p>
+                {productDescription && (
+                  <p className="text-xs text-gray-600 mt-2 line-clamp-3 max-w-md">{productDescription}</p>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+
       {/* Compact Controls Row */}
       <div className="bg-white rounded-lg border p-4">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -241,6 +262,53 @@ export function VisualGeneration({ productName, productDescription, onVisualSele
             className="w-full h-20 p-3 border rounded-md resize-none text-sm focus:ring-2 focus:ring-purple-500 focus:border-transparent"
           />
         </div>
+
+        {/* Preview Section */}
+        {prompt.trim() && (
+          <div className="mt-4 p-4 bg-gray-50 border border-gray-200 rounded-lg">
+            <h3 className="text-sm font-semibold mb-3 text-gray-800">Preview Generation Details</h3>
+            
+            {/* Product Description */}
+            <div className="mb-3">
+              <h4 className="text-xs font-medium text-gray-600 mb-1">Product Description:</h4>
+              <div className="text-sm text-gray-700 bg-white p-2 rounded border">
+                {productDescription || 'No product description available'}
+              </div>
+            </div>
+
+            {/* Selected Style */}
+            <div className="mb-3">
+              <h4 className="text-xs font-medium text-gray-600 mb-1">Visual Style:</h4>
+              <div className="text-sm text-gray-700 bg-white p-2 rounded border">
+                {visualStyles.find(style => style.id === selectedStyle)?.name} - {visualStyles.find(style => style.id === selectedStyle)?.description}
+              </div>
+            </div>
+
+            {/* Your Vision */}
+            <div className="mb-3">
+              <h4 className="text-xs font-medium text-gray-600 mb-1">Your Creative Vision:</h4>
+              <div className="text-sm text-gray-700 bg-white p-2 rounded border">
+                {prompt}
+              </div>
+            </div>
+
+            {/* Generated Prompt Preview */}
+            <div>
+              <h4 className="text-xs font-medium text-gray-600 mb-1">Enhanced AI Prompt (Preview):</h4>
+              <div className="text-xs text-gray-600 bg-white p-2 rounded border max-h-24 overflow-y-auto">
+                A high-resolution, studio-lit product photograph of a {productDescription || productName} on a {selectedStyle === 'professional' ? 'clean white seamless paper backdrop' : 'premium surface that complements the product'}.
+                <br /><br />
+                <strong>Product:</strong> {productDescription || 'the original product description'}
+                <br />
+                <strong>Style:</strong> {visualStyles.find(style => style.id === selectedStyle)?.name}
+                <br />
+                <strong>Creative Vision:</strong> {prompt}
+                <br /><br />
+                <em>+ Enhanced with strict product integrity requirements and professional photography setup...</em>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Generated Visuals */}
@@ -369,7 +437,7 @@ export function VisualGeneration({ productName, productDescription, onVisualSele
                   )}
                   
                   {/* Overlay with actions */}
-                  <div className="absolute inset-0 bg-opacity-0 group-hover:bg-opacity-50 transition-all duration-300 flex items-center justify-center">
+                  <div className="absolute inset-0 bg-gray-900 bg-opacity-0 group-hover:bg-opacity-40 transition-all duration-300 flex items-center justify-center">
                     <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex gap-2">
                       <Button
                         onClick={() => handleDownload(visual, index)}

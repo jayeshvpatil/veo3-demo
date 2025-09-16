@@ -1,0 +1,460 @@
+import React, { useState, useRef, useEffect } from 'react';
+import { Button } from './Button';
+import { Send, Bot, User, Sparkles, Download, Check, Loader2, MessageCircle, Zap } from 'lucide-react';
+import { useProduct } from '../../contexts/ProductContext';
+
+interface AgenticVisualChatProps {
+  productName: string;
+  productDescription?: string;
+  productImage?: string;
+  onVisualSelected: (imageData: string, mimeType: string) => void;
+  onBack: () => void;
+}
+
+interface ChatMessage {
+  id: string;
+  type: 'user' | 'agent' | 'system';
+  content: string;
+  timestamp: Date;
+  visuals?: GeneratedVisual[];
+  isGenerating?: boolean;
+}
+
+interface GeneratedVisual {
+  data: string;
+  mimeType: string;
+  description?: string;
+  imageUrl?: string;
+}
+
+const agentPersonalities = [
+  {
+    id: 'creative',
+    name: 'Creative Director',
+    icon: '🎨',
+    description: 'Focuses on artistic composition and brand aesthetics',
+    style: 'artistic and brand-focused'
+  },
+  {
+    id: 'photographer',
+    name: 'Product Photographer',
+    icon: '📸',
+    description: 'Expert in lighting, angles, and technical photography',
+    style: 'technically precise and professional'
+  },
+  {
+    id: 'marketer',
+    name: 'Marketing Specialist',
+    icon: '📈',
+    description: 'Optimizes visuals for conversion and engagement',
+    style: 'conversion-focused and platform-optimized'
+  }
+];
+
+export function AgenticVisualChat({ productName, productDescription, productImage, onVisualSelected, onBack }: AgenticVisualChatProps) {
+  const { saveVisualToLibrary } = useProduct();
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [inputMessage, setInputMessage] = useState('');
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [selectedAgent, setSelectedAgent] = useState(agentPersonalities[0]);
+  const [selectedVisual, setSelectedVisual] = useState<number | null>(null);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    // Initialize with welcome message
+    const welcomeMessage: ChatMessage = {
+      id: Date.now().toString(),
+      type: 'agent',
+      content: `Hi! I'm your ${selectedAgent.name} 👋 I'll help you create stunning visuals for "${productName}". 
+
+Tell me what kind of visual you'd like to create! You can say things like:
+• "Create a luxury product shot with dramatic lighting"
+• "Show it in a lifestyle setting for Instagram"
+• "Make it look premium for an e-commerce listing"
+• "I want something more artistic and creative"
+
+What's your vision?`,
+      timestamp: new Date()
+    };
+    setMessages([welcomeMessage]);
+  }, [productName, selectedAgent]);
+
+  useEffect(() => {
+    scrollToBottom();
+  }, [messages]);
+
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  };
+
+  const generateVisualFromPrompt = async (userPrompt: string, conversationContext: string) => {
+    try {
+      // Enhanced prompt based on agent personality and conversation
+      const agentEnhancedPrompt = `${conversationContext}
+
+Agent Context: Acting as a ${selectedAgent.name} - ${selectedAgent.description}
+User Request: ${userPrompt}
+Product: ${productName}
+Product Description: ${productDescription || 'No description provided'}
+
+Create a visual that addresses the user's specific request while maintaining the product's authentic characteristics.`;
+
+      const response = await fetch('/api/visuals/generate', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          prompt: agentEnhancedPrompt,
+          productName,
+          productDescription,
+          style: selectedAgent.style,
+          count: 1
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const result = await response.json();
+      
+      if (result.images && result.images.length > 0) {
+        const visuals: GeneratedVisual[] = result.images.map((img: any, index: number) => ({
+          data: img.data,
+          mimeType: img.mimeType,
+          description: result.description,
+          imageUrl: img.imageUrl
+        }));
+
+        return visuals;
+      } else {
+        throw new Error('No images generated');
+      }
+    } catch (error) {
+      console.error('Error generating visual:', error);
+      throw error;
+    }
+  };
+
+  const handleSendMessage = async () => {
+    if (!inputMessage.trim() || isGenerating) return;
+
+    const userMessage: ChatMessage = {
+      id: Date.now().toString(),
+      type: 'user',
+      content: inputMessage.trim(),
+      timestamp: new Date()
+    };
+
+    setMessages(prev => [...prev, userMessage]);
+    setInputMessage('');
+    setIsGenerating(true);
+
+    // Add generating message
+    const generatingMessage: ChatMessage = {
+      id: (Date.now() + 1).toString(),
+      type: 'agent',
+      content: `Perfect! I'm creating a ${selectedAgent.style} visual based on your request. This will take just a moment...`,
+      timestamp: new Date(),
+      isGenerating: true
+    };
+
+    setMessages(prev => [...prev, generatingMessage]);
+
+    try {
+      // Build conversation context
+      const conversationContext = messages
+        .filter(m => m.type === 'user')
+        .map(m => m.content)
+        .join(' | ');
+
+      const visuals = await generateVisualFromPrompt(userMessage.content, conversationContext);
+
+      // Remove generating message and add result
+      setMessages(prev => {
+        const withoutGenerating = prev.filter(m => m.id !== generatingMessage.id);
+        
+        const resultMessage: ChatMessage = {
+          id: (Date.now() + 2).toString(),
+          type: 'agent',
+          content: `Great! I've created a visual based on your request. Here's what I came up with:`,
+          timestamp: new Date(),
+          visuals: visuals
+        };
+
+        return [...withoutGenerating, resultMessage];
+      });
+
+      // Save to library automatically
+      if (visuals.length > 0) {
+        const visualToSave = {
+          id: Date.now().toString(),
+          url: visuals[0].imageUrl || `data:${visuals[0].mimeType};base64,${visuals[0].data}`,
+          prompt: userMessage.content,
+          timestamp: Date.now()
+        };
+        saveVisualToLibrary(visualToSave);
+      }
+
+    } catch (error) {
+      // Remove generating message and show error
+      setMessages(prev => {
+        const withoutGenerating = prev.filter(m => m.id !== generatingMessage.id);
+        
+        const errorMessage: ChatMessage = {
+          id: (Date.now() + 3).toString(),
+          type: 'agent',
+          content: `I apologize, but I encountered an issue creating that visual. Could you try rephrasing your request or being more specific about what you'd like to see?`,
+          timestamp: new Date()
+        };
+
+        return [...withoutGenerating, errorMessage];
+      });
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
+  const handleKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      handleSendMessage();
+    }
+  };
+
+  const handleDownload = (visual: GeneratedVisual, messageId: string, index: number) => {
+    const link = document.createElement('a');
+    link.href = `data:${visual.mimeType};base64,${visual.data}`;
+    link.download = `${productName}-chat-visual-${messageId}-${index + 1}.${visual.mimeType.split('/')[1]}`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  const handleSelectVisual = (visual: GeneratedVisual) => {
+    onVisualSelected(visual.data, visual.mimeType);
+  };
+
+  const suggestedPrompts = [
+    "Make it more luxurious and premium",
+    "Show it in a lifestyle setting",
+    "Add dramatic lighting and shadows",
+    "Create a minimalist clean look",
+    "Make it Instagram-ready",
+    "Focus on the product details"
+  ];
+
+  return (
+    <div className="bg-gray-50 h-screen flex flex-col">
+      <div className="max-w-4xl mx-auto w-full flex flex-col h-full">
+        {/* Header */}
+        <div className="bg-white border-b p-4">
+          <div className="flex items-center justify-between mb-3">
+            <div>
+              <h2 className="text-xl font-bold text-gray-900 flex items-center gap-2">
+                <MessageCircle className="text-purple-600" />
+                Visual Creation Chat
+              </h2>
+              <p className="text-gray-600 text-sm">Creating visuals for {productName}</p>
+            </div>
+            <div className="flex items-center gap-3">
+              <select
+                value={selectedAgent.id}
+                onChange={(e) => {
+                  const agent = agentPersonalities.find(a => a.id === e.target.value);
+                  if (agent) setSelectedAgent(agent);
+                }}
+                className="text-sm p-2 border rounded-md focus:ring-2 focus:ring-purple-500"
+              >
+                {agentPersonalities.map((agent) => (
+                  <option key={agent.id} value={agent.id}>
+                    {agent.icon} {agent.name}
+                  </option>
+                ))}
+              </select>
+              <Button onClick={onBack} variant="outline" size="sm">
+                Back to Products
+              </Button>
+            </div>
+          </div>
+          
+          {/* Original Product Display */}
+          {productImage && (
+            <div className="bg-gray-50 border border-gray-200 rounded-lg p-3">
+              <h3 className="text-sm font-medium text-gray-700 mb-2">Original Product</h3>
+              <div className="flex items-center gap-3">
+                <img
+                  src={productImage}
+                  alt={productName}
+                  className="w-16 h-16 object-cover rounded-lg border border-gray-200"
+                />
+                <div>
+                  <p className="text-sm font-medium text-gray-900">{productName}</p>
+                  {productDescription && (
+                    <p className="text-xs text-gray-600 mt-1 line-clamp-2">{productDescription}</p>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Messages */}
+        <div className="flex-1 overflow-y-auto p-4 space-y-4">
+          {messages.map((message) => (
+            <div
+              key={message.id}
+              className={`flex ${message.type === 'user' ? 'justify-end' : 'justify-start'}`}
+            >
+              <div className={`max-w-2xl ${message.type === 'user' ? 'order-2' : 'order-1'}`}>
+                <div
+                  className={`rounded-lg p-3 ${
+                    message.type === 'user'
+                      ? 'bg-purple-600 text-white ml-auto'
+                      : 'bg-white border shadow-sm'
+                  }`}
+                >
+                  <div className="flex items-center gap-2 mb-1">
+                    {message.type === 'user' ? (
+                      <User className="w-4 h-4" />
+                    ) : (
+                      <div className="flex items-center gap-1">
+                        <Bot className="w-4 h-4 text-purple-600" />
+                        <span className="text-xs font-medium text-purple-600">
+                          {selectedAgent.icon} {selectedAgent.name}
+                        </span>
+                      </div>
+                    )}
+                    <span className="text-xs opacity-70">
+                      {message.timestamp.toLocaleTimeString()}
+                    </span>
+                  </div>
+                  
+                  <div className="text-sm whitespace-pre-wrap">{message.content}</div>
+
+                  {message.isGenerating && (
+                    <div className="flex items-center gap-2 mt-2 text-purple-600">
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      <span className="text-xs">Generating visual...</span>
+                    </div>
+                  )}
+
+                  {/* Visuals */}
+                  {message.visuals && message.visuals.length > 0 && (
+                    <div className="mt-3 space-y-3">
+                      {message.visuals.map((visual, index) => (
+                        <div key={index} className="relative group">
+                          <div className="border rounded-lg overflow-hidden bg-white">
+                            {visual.imageUrl ? (
+                              <img
+                                src={visual.imageUrl}
+                                alt={`Generated visual ${index + 1}`}
+                                className="w-full h-48 object-cover"
+                                onError={(e) => {
+                                  console.log('Image URL failed, trying data URI:', visual.imageUrl);
+                                  const dataUri = `data:${visual.mimeType};base64,${visual.data}`;
+                                  e.currentTarget.src = dataUri;
+                                }}
+                                onLoad={() => {
+                                  console.log('Image loaded successfully via URL:', visual.imageUrl);
+                                }}
+                              />
+                            ) : (
+                              <img
+                                src={`data:${visual.mimeType};base64,${visual.data}`}
+                                alt={`Generated visual ${index + 1}`}
+                                className="w-full h-48 object-cover"
+                                onError={(e) => {
+                                  console.log('Data URI failed to load:', visual.mimeType, visual.data?.length);
+                                }}
+                                onLoad={() => {
+                                  console.log('Image loaded successfully via data URI');
+                                }}
+                              />
+                            )}
+                          </div>
+                          
+                          {/* Action buttons below image */}
+                          <div className="mt-2 flex gap-2 justify-center">
+                            <Button
+                              onClick={() => handleDownload(visual, message.id, index)}
+                              size="sm"
+                              className="bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 text-xs px-3 py-1"
+                            >
+                              <Download className="w-3 h-3 mr-1" />
+                              Download
+                            </Button>
+                            <Button
+                              onClick={() => {
+                                setSelectedVisual(index);
+                                handleSelectVisual(visual);
+                              }}
+                              size="sm"
+                              className="bg-purple-600 text-white hover:bg-purple-700 text-xs px-3 py-1"
+                            >
+                              <Check className="w-3 h-3 mr-1" />
+                              Use for Video
+                            </Button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          ))}
+          <div ref={messagesEndRef} />
+        </div>
+
+        {/* Suggested Prompts */}
+        {!isGenerating && messages.length <= 2 && (
+          <div className="p-4 bg-white border-t">
+            <h4 className="text-sm font-medium text-gray-700 mb-2">Quick suggestions:</h4>
+            <div className="flex flex-wrap gap-2">
+              {suggestedPrompts.map((prompt, index) => (
+                <button
+                  key={index}
+                  onClick={() => setInputMessage(prompt)}
+                  className="text-xs px-3 py-1 bg-gray-100 hover:bg-gray-200 rounded-full text-gray-700 transition-colors"
+                >
+                  <Zap className="w-3 h-3 inline mr-1" />
+                  {prompt}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Input */}
+        <div className="p-4 bg-white border-t">
+          <div className="flex gap-2">
+            <input
+              ref={inputRef}
+              type="text"
+              value={inputMessage}
+              onChange={(e) => setInputMessage(e.target.value)}
+              onKeyPress={handleKeyPress}
+              placeholder={`Tell ${selectedAgent.name} what you'd like to see...`}
+              className="flex-1 p-2 border rounded-md focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+              disabled={isGenerating}
+            />
+            <Button
+              onClick={handleSendMessage}
+              disabled={!inputMessage.trim() || isGenerating}
+              className="bg-purple-600 hover:bg-purple-700 text-white"
+            >
+              {isGenerating ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <Send className="w-4 h-4" />
+              )}
+            </Button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
