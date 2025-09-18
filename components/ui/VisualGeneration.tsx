@@ -27,6 +27,64 @@ const visualStyles = [
   { id: 'social', name: 'Social Media Ready', description: 'Optimized for Instagram and social platforms' }
 ];
 
+// Professional style templates with hyper-specific, best-practice descriptions
+const styleTemplates = {
+  professional: {
+    backgroundSurface: 'seamless white infinity backdrop with graduated lighting transition',
+    lightingSetup: 'three-point studio lighting system with 1000W key light at 45°, 500W fill light at -30°, and rim light for edge definition',
+    lightingPurpose: 'achieve even illumination with 2:1 lighting ratio, eliminating harsh shadows while maintaining dimensional modeling',
+    cameraAngle: '45-degree elevated perspective using 85mm lens equivalent for natural perspective compression',
+    showcaseFeature: 'product architecture with clinical precision, revealing every design detail and material characteristic',
+    focusDetail: 'razor-sharp edge definition, surface micro-textures, and material authenticity with macro-level clarity',
+    aspectRatio: '16:9 aspect ratio'
+  },
+  lifestyle: {
+    backgroundSurface: 'warm reclaimed oak wooden surface with subtle natural grain patterns and soft ambient props suggesting daily use',
+    lightingSetup: 'golden hour window lighting from camera left, supplemented by warm LED panel for shadow fill',
+    lightingPurpose: 'create authentic lived-in atmosphere with soft directional shadows and warm color temperature (3200K)',
+    cameraAngle: 'eye-level perspective at 50mm equivalent focal length for natural human viewpoint',
+    showcaseFeature: 'product integration within realistic lifestyle context, showing natural usage scenarios and environmental harmony',
+    focusDetail: 'environmental storytelling elements, contextual props, and authentic interaction suggestions',
+    aspectRatio: '4:3 aspect ratio'
+  },
+  artistic: {
+    backgroundSurface: 'textured concrete wall with dramatic directional lighting creating geometric shadow patterns',
+    lightingSetup: 'single dramatic side light with barn doors, creating 70% shadow falloff and colored gel accent lighting',
+    lightingPurpose: 'establish artistic mood through chiaroscuro lighting technique with bold contrast ratios and creative shadow play',
+    cameraAngle: 'low-angle heroic perspective using wide-angle lens (24mm equivalent) for dynamic compositional impact',
+    showcaseFeature: 'sculptural product qualities through dramatic lighting interaction and bold compositional positioning',
+    focusDetail: 'artistic shadow patterns, surface light interaction, and creative reflection elements',
+    aspectRatio: '1:1 aspect ratio'
+  },
+  minimalist: {
+    backgroundSurface: 'pure white seamless infinity background with absolutely no visible horizon line or surface texture',
+    lightingSetup: 'soft box array providing completely even, shadowless illumination from multiple angles (360° coverage)',
+    lightingPurpose: 'eliminate all shadows and surface reflections to achieve pure isolation with clinical clarity',
+    cameraAngle: 'perfectly centered frontal composition with 85mm lens for minimal perspective distortion',
+    showcaseFeature: 'absolute product isolation with geometric precision, removing all visual distractions',
+    focusDetail: 'pure form definition, clean geometric lines, and essential product silhouette',
+    aspectRatio: '1:1 aspect ratio'
+  },
+  luxury: {
+    backgroundSurface: 'polished Carrara marble surface with subtle veining, complemented by brushed gold accent elements',
+    lightingSetup: 'sophisticated rim lighting setup with warm accent spots (2700K) and cool key light (5600K) for dimensional luxury feel',
+    lightingPurpose: 'create premium aesthetic through careful highlight placement, rich material rendering, and elegant contrast control',
+    cameraAngle: 'slightly elevated luxury perspective (15° above product plane) using 100mm lens for elegant compression',
+    showcaseFeature: 'premium material qualities, sophisticated craftsmanship details, and luxury brand positioning elements',
+    focusDetail: 'rich surface textures, premium finish quality, metallic accents, and luxury material authenticity',
+    aspectRatio: '16:9 aspect ratio'
+  },
+  social: {
+    backgroundSurface: 'vibrant gradient backdrop transitioning from coral to peach, with trending social media aesthetic elements',
+    lightingSetup: 'bright ring light setup with color temperature optimized for mobile display (4000K) and catchlight enhancement',
+    lightingPurpose: 'maximize visual impact for social media engagement with punchy colors and scroll-stopping brightness',
+    cameraAngle: 'dynamic overhead flat lay angle optimized for mobile viewing and social media cropping',
+    showcaseFeature: 'social media shareability with trending aesthetic appeal and mobile-first composition',
+    focusDetail: 'vibrant color saturation, engaging visual elements, and social media optimization',
+    aspectRatio: '9:16 aspect ratio'
+  }
+};
+
 export function VisualGeneration({ productName, productDescription, productImage, onVisualSelected, onBack }: VisualGenerationProps) {
   const { saveVisualToLibrary } = useProduct();
   const [prompt, setPrompt] = useState('Create a stunning, professional product photo with perfect lighting and premium background');
@@ -36,6 +94,45 @@ export function VisualGeneration({ productName, productDescription, productImage
   const [generatedVisuals, setGeneratedVisuals] = useState<GeneratedVisual[]>([]);
   const [selectedVisual, setSelectedVisual] = useState<number | null>(null);
   const [description, setDescription] = useState('');
+  
+  // Template field defaults - all user customizable
+  const [productSubject, setProductSubject] = useState(productDescription || productName || 'premium product');
+  const [backgroundSurface, setBackgroundSurface] = useState('clean white seamless paper backdrop');
+  const [lightingSetup, setLightingSetup] = useState('three-point softbox setup');
+  const [lightingPurpose, setLightingPurpose] = useState('highlight authentic materials without color distortion');
+  const [cameraAngle, setCameraAngle] = useState('45-degree elevated view');
+  const [showcaseFeature, setShowcaseFeature] = useState("the product's authentic form and material details");
+  const [focusDetail, setFocusDetail] = useState('material fidelity and exact color reproduction');
+  const [aspectRatio, setAspectRatio] = useState('16:9 aspect ratio');
+
+  const getBackgroundOptions = () => [
+    'clean white seamless paper backdrop',
+    'natural lifestyle setting',
+    'premium marble surface',
+    'clean minimal background',
+    'creative artistic backdrop',
+    'Instagram-optimized surface',
+    'wooden surface with natural grain',
+    'modern concrete platform',
+    'soft fabric backdrop',
+    'industrial metal surface'
+  ];
+
+  // Update all template fields when style changes
+  const handleStyleChange = (newStyle: string) => {
+    setSelectedStyle(newStyle);
+    
+    const template = styleTemplates[newStyle as keyof typeof styleTemplates];
+    if (template) {
+      setBackgroundSurface(template.backgroundSurface);
+      setLightingSetup(template.lightingSetup);
+      setLightingPurpose(template.lightingPurpose);
+      setCameraAngle(template.cameraAngle);
+      setShowcaseFeature(template.showcaseFeature);
+      setFocusDetail(template.focusDetail);
+      setAspectRatio(template.aspectRatio);
+    }
+  };
 
   const handleGenerate = async () => {
     if (!prompt.trim()) {
@@ -59,10 +156,19 @@ export function VisualGeneration({ productName, productDescription, productImage
         },
         body: JSON.stringify({
           prompt: prompt.trim(),
-          productName,
-          productDescription: productDescription || '',
           style: visualStyles.find(s => s.id === selectedStyle)?.description || 'professional product photography',
-          count: numberOfVisuals
+          count: numberOfVisuals,
+          productImage: productImage, // Include the product image
+          templateFields: {
+            productSubject,
+            backgroundSurface,
+            lightingSetup,
+            lightingPurpose,
+            cameraAngle,
+            showcaseFeature,
+            focusDetail,
+            aspectRatio
+          }
         }),
       });
 
@@ -206,13 +312,14 @@ export function VisualGeneration({ productName, productDescription, productImage
             <h3 className="text-sm font-semibold mb-2">Visual Style</h3>
             <select 
               value={selectedStyle} 
-              onChange={(e) => setSelectedStyle(e.target.value)}
+              onChange={(e) => handleStyleChange(e.target.value)}
               className="w-full p-2 border rounded-md text-sm focus:ring-2 focus:ring-purple-500 focus:border-transparent"
             >
               {visualStyles.map((style) => (
                 <option key={style.id} value={style.id}>{style.name}</option>
               ))}
             </select>
+            <p className="text-xs text-gray-500 mt-1">✨ Selecting a style auto-populates all template fields</p>
           </div>
 
           {/* Number of Visuals */}
@@ -263,18 +370,120 @@ export function VisualGeneration({ productName, productDescription, productImage
           />
         </div>
 
+        {/* Advanced Template Controls */}
+        <div className="mt-4">
+          <details className="group" open>
+            <summary className="cursor-pointer text-sm font-semibold mb-2 flex items-center gap-2 hover:text-purple-600">
+              <span>🎛️ Photography Template Controls</span>
+              <span className="text-xs text-gray-500 group-open:hidden">Professional presets applied automatically</span>
+            </summary>
+            <div className="mt-3 p-4 bg-gradient-to-br from-gray-50 to-gray-100 border border-gray-200 rounded-lg">
+              <div className="mb-3 p-2 bg-blue-50 border border-blue-200 rounded text-center">
+                <p className="text-blue-800 font-medium text-xs">
+                  📸 Current Style: <strong>{visualStyles.find(s => s.id === selectedStyle)?.name}</strong> - All fields auto-configured with professional defaults
+                </p>
+              </div>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-xs font-medium text-gray-700 mb-1">Product Subject</label>
+                <input
+                  type="text"
+                  value={productSubject}
+                  onChange={(e) => setProductSubject(e.target.value)}
+                  placeholder="e.g., premium sneaker, luxury watch"
+                  className="w-full p-2 border rounded-md text-xs focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-gray-700 mb-1">Background Surface</label>
+                <select
+                  value={backgroundSurface}
+                  onChange={(e) => setBackgroundSurface(e.target.value)}
+                  className="w-full p-2 border rounded-md text-xs focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                >
+                  {getBackgroundOptions().map((option) => (
+                    <option key={option} value={option}>{option}</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-gray-700 mb-1">Lighting Setup</label>
+                <input
+                  type="text"
+                  value={lightingSetup}
+                  onChange={(e) => setLightingSetup(e.target.value)}
+                  placeholder="e.g., three-point softbox setup"
+                  className="w-full p-2 border rounded-md text-xs focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-gray-700 mb-1">Lighting Purpose</label>
+                <input
+                  type="text"
+                  value={lightingPurpose}
+                  onChange={(e) => setLightingPurpose(e.target.value)}
+                  placeholder="e.g., highlight authentic materials"
+                  className="w-full p-2 border rounded-md text-xs focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-gray-700 mb-1">Camera Angle</label>
+                <input
+                  type="text"
+                  value={cameraAngle}
+                  onChange={(e) => setCameraAngle(e.target.value)}
+                  placeholder="e.g., 45-degree elevated view"
+                  className="w-full p-2 border rounded-md text-xs focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-gray-700 mb-1">Showcase Feature</label>
+                <input
+                  type="text"
+                  value={showcaseFeature}
+                  onChange={(e) => setShowcaseFeature(e.target.value)}
+                  placeholder="e.g., authentic form and material details"
+                  className="w-full p-2 border rounded-md text-xs focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-gray-700 mb-1">Focus Detail</label>
+                <input
+                  type="text"
+                  value={focusDetail}
+                  onChange={(e) => setFocusDetail(e.target.value)}
+                  placeholder="e.g., material fidelity and color reproduction"
+                  className="w-full p-2 border rounded-md text-xs focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-gray-700 mb-1">Aspect Ratio</label>
+                <select
+                  value={aspectRatio}
+                  onChange={(e) => setAspectRatio(e.target.value)}
+                  className="w-full p-2 border rounded-md text-xs focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                >
+                  <option value="16:9 aspect ratio">16:9 (Widescreen)</option>
+                  <option value="4:3 aspect ratio">4:3 (Standard)</option>
+                  <option value="1:1 aspect ratio">1:1 (Square)</option>
+                  <option value="3:4 aspect ratio">3:4 (Portrait)</option>
+                  <option value="9:16 aspect ratio">9:16 (Vertical)</option>
+                </select>
+              </div>
+              </div>
+            </div>
+          </details>
+        </div>
+
         {/* Preview Section */}
         {prompt.trim() && (
           <div className="mt-4 p-4 bg-gray-50 border border-gray-200 rounded-lg">
             <h3 className="text-sm font-semibold mb-2 text-gray-800">Final Enhanced Prompt Preview</h3>
             <div className="text-xs text-gray-600 bg-white p-3 rounded border max-h-32 overflow-y-auto font-mono">
-              A high-resolution, studio-lit product photograph of a {productDescription || productName} on a {selectedStyle === 'professional' ? 'clean white seamless paper backdrop' : 'premium surface that complements the product'}.
-              <br /><br />
-              <strong>CRITICAL MATERIAL ACCURACY:</strong> The product MUST maintain exact grayish-natural tone, breathable mesh texture, soft suede texture, and smooth leather panels exactly as described.
+              A high-resolution, studio-lit product photograph of a <span className="font-semibold text-purple-600">{productSubject}</span> on a <span className="font-semibold text-purple-600">{backgroundSurface}</span>. The lighting is a <span className="font-semibold text-purple-600">{lightingSetup}</span> to <span className="font-semibold text-purple-600">{lightingPurpose}</span>. The camera angle is a <span className="font-semibold text-purple-600">{cameraAngle}</span> to showcase <span className="font-semibold text-purple-600">{showcaseFeature}</span>. Ultra-realistic, with sharp focus on <span className="font-semibold text-purple-600">{focusDetail}</span>. <span className="font-semibold text-purple-600">{aspectRatio}</span>.
               <br /><br />
               <strong>Creative Direction:</strong> {prompt}
-              <br /><br />
-              <strong>Photography Setup:</strong> Three-point softbox lighting, 45-degree elevated view, ultra-realistic focus with perfect material fidelity and exact color reproduction. 16:9 aspect ratio.
             </div>
           </div>
         )}
@@ -308,11 +517,7 @@ export function VisualGeneration({ productName, productDescription, productImage
             </div>
           )}
 
-          <div className={`grid gap-4 mb-6 ${
-            generatedVisuals.length === 1 ? 'grid-cols-1 max-w-md mx-auto' :
-            generatedVisuals.length === 2 ? 'grid-cols-1 md:grid-cols-2' :
-            'grid-cols-1 md:grid-cols-2 lg:grid-cols-3'
-          }`}>
+          <div className="grid gap-4 mb-6 grid-cols-1 md:grid-cols-2">
             {generatedVisuals.map((visual, index) => {
               // Log the visual data for debugging
               console.log(`Processing visual ${index}:`, {
@@ -336,7 +541,7 @@ export function VisualGeneration({ productName, productDescription, productImage
                       <img
                         src={visual.imageUrl}
                         alt={`Generated visual ${index + 1} for ${productName}`}
-                        className="w-full h-48 object-cover bg-gray-200"
+                        className="w-full h-64 object-contain bg-gray-50"
                         onError={(e) => {
                           console.error('❌ Server image failed to load, trying data URI:', {
                             index,
@@ -365,7 +570,7 @@ export function VisualGeneration({ productName, productDescription, productImage
                           <img
                             src={dataUri}
                             alt={`Generated visual ${index + 1} for ${productName}`}
-                            className="w-full h-48 object-cover bg-gray-200"
+                            className="w-full h-64 object-contain bg-gray-50"
                             onError={(e) => {
                               console.error('❌ Data URI image failed to load:', {
                                 index,
@@ -406,7 +611,7 @@ export function VisualGeneration({ productName, productDescription, productImage
                   )}
                   
                   {/* Overlay with actions */}
-                  <div className="absolute inset-0 bg-gray-900 bg-opacity-0 group-hover:bg-opacity-40 transition-all duration-300 flex items-center justify-center">
+                  <div className="absolute inset-0 bg-opacity-0 group-hover:bg-opacity-40 transition-all duration-300 flex items-center justify-center">
                     <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex gap-2">
                       <Button
                         onClick={() => handleDownload(visual, index)}

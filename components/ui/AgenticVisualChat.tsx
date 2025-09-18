@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Button } from './Button';
-import { Send, Bot, User, Sparkles, Download, Check, Loader2, MessageCircle, Zap } from 'lucide-react';
+import { Send, Bot, User, Download, Check, Loader2, MessageCircle, Zap } from 'lucide-react';
 import { useProduct } from '../../contexts/ProductContext';
 
 interface AgenticVisualChatProps {
@@ -57,7 +57,6 @@ export function AgenticVisualChat({ productName, productDescription, productImag
   const [inputMessage, setInputMessage] = useState('');
   const [isGenerating, setIsGenerating] = useState(false);
   const [selectedAgent, setSelectedAgent] = useState(agentPersonalities[0]);
-  const [selectedVisual, setSelectedVisual] = useState<number | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -68,13 +67,16 @@ export function AgenticVisualChat({ productName, productDescription, productImag
       type: 'agent',
       content: `Hi! I'm your ${selectedAgent.name} 👋 I'll help you create stunning visuals for "${productName}". 
 
-Tell me what kind of visual you'd like to create! You can say things like:
+I can see the product image and will use it as reference for creating new visuals. Tell me what kind of visual you'd like to create! You can say things like:
+
 • "Create a luxury product shot with dramatic lighting"
 • "Show it in a lifestyle setting for Instagram"
 • "Make it look premium for an e-commerce listing"
 • "I want something more artistic and creative"
+• "Make it brighter with better contrast"
+• "Change the background to something more elegant"
 
-What's your vision?`,
+I'll remember our conversation and can make iterative improvements based on your feedback. What's your vision?`,
       timestamp: new Date()
     };
     setMessages([welcomeMessage]);
@@ -88,29 +90,24 @@ What's your vision?`,
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
 
-  const generateVisualFromPrompt = async (userPrompt: string, conversationContext: string) => {
+  const generateVisualFromPrompt = async (userPrompt: string) => {
     try {
-      // Enhanced prompt based on agent personality and conversation
-      const agentEnhancedPrompt = `${conversationContext}
-
-Agent Context: Acting as a ${selectedAgent.name} - ${selectedAgent.description}
-User Request: ${userPrompt}
-Product: ${productName}
-Product Description: ${productDescription || 'No description provided'}
-
-Create a visual that addresses the user's specific request while maintaining the product's authentic characteristics.`;
-
-      const response = await fetch('/api/visuals/generate', {
+      // Use the new chat API instead of the visuals generate API
+      const response = await fetch('/api/chat', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          prompt: agentEnhancedPrompt,
+          userMessage: userPrompt,
+          conversationHistory: messages,
           productName,
           productDescription,
-          style: selectedAgent.style,
-          count: 1
+          productImage, // Pass the product image for multimodal processing
+          agentPersonality: selectedAgent,
+          previouslyGeneratedImages: messages
+            .filter(m => m.visuals && m.visuals.length > 0)
+            .flatMap(m => m.visuals || [])
         }),
       });
 
@@ -121,11 +118,11 @@ Create a visual that addresses the user's specific request while maintaining the
       const result = await response.json();
       
       if (result.images && result.images.length > 0) {
-        const visuals: GeneratedVisual[] = result.images.map((img: any, index: number) => ({
+        const visuals: GeneratedVisual[] = result.images.map((img: { data: string; mimeType: string }) => ({
           data: img.data,
           mimeType: img.mimeType,
-          description: result.description,
-          imageUrl: img.imageUrl
+          description: result.response,
+          imageUrl: undefined // Chat API returns base64 only
         }));
 
         return visuals;
@@ -165,21 +162,38 @@ Create a visual that addresses the user's specific request while maintaining the
 
     try {
       // Build conversation context
-      const conversationContext = messages
-        .filter(m => m.type === 'user')
-        .map(m => m.content)
-        .join(' | ');
-
-      const visuals = await generateVisualFromPrompt(userMessage.content, conversationContext);
+      const visuals = await generateVisualFromPrompt(userMessage.content);
 
       // Remove generating message and add result
       setMessages(prev => {
         const withoutGenerating = prev.filter(m => m.id !== generatingMessage.id);
         
+        // Check if this is a modification of existing visual
+        const hasExistingVisuals = messages.some(m => m.visuals && m.visuals.length > 0);
+        const isModification = hasExistingVisuals && (
+          userMessage.content.toLowerCase().includes('make it') ||
+          userMessage.content.toLowerCase().includes('change') ||
+          userMessage.content.toLowerCase().includes('modify') ||
+          userMessage.content.toLowerCase().includes('adjust')
+        );
+        
         const resultMessage: ChatMessage = {
           id: (Date.now() + 2).toString(),
           type: 'agent',
-          content: `Great! I've created a visual based on your request. Here's what I came up with:`,
+          content: `Great! I've ${isModification ? 'modified the previous visual' : 'created a new visual'} based on your request. Here's what I came up with:
+
+${isModification ? 
+  'This version builds upon the previous image with your requested changes.' : 
+  'This is created using the original product image as reference.'}
+
+You can ask me to modify this further by saying things like:
+• "Make it brighter"
+• "Change the background" 
+• "Make it more luxurious"
+• "Try a different angle"
+• "Add more dramatic lighting"
+
+What would you like to adjust?`,
           timestamp: new Date(),
           visuals: visuals
         };
@@ -198,7 +212,7 @@ Create a visual that addresses the user's specific request while maintaining the
         saveVisualToLibrary(visualToSave);
       }
 
-    } catch (error) {
+    } catch {
       // Remove generating message and show error
       setMessages(prev => {
         const withoutGenerating = prev.filter(m => m.id !== generatingMessage.id);
@@ -237,13 +251,32 @@ Create a visual that addresses the user's specific request while maintaining the
     onVisualSelected(visual.data, visual.mimeType);
   };
 
+  const handleStartOver = () => {
+    // Reset conversation to initial state
+    const welcomeMessage: ChatMessage = {
+      id: Date.now().toString(),
+      type: 'agent',
+      content: `Let's start fresh! I'm ready to create new visuals for "${productName}" using the original product image as reference. 
+
+What kind of visual would you like to create?`,
+      timestamp: new Date()
+    };
+    
+    setMessages([welcomeMessage]);
+    setInputMessage('');
+  };
+
   const suggestedPrompts = [
     "Make it more luxurious and premium",
-    "Show it in a lifestyle setting",
-    "Add dramatic lighting and shadows",
-    "Create a minimalist clean look",
+    "Change the background to white",
+    "Add dramatic lighting and shadows", 
+    "Make it brighter with better contrast",
+    "Try a different camera angle",
+    "Make it more minimalist",
+    "Add a lifestyle setting",
+    "Focus on the product details",
     "Make it Instagram-ready",
-    "Focus on the product details"
+    "Create something more artistic"
   ];
 
   return (
@@ -274,6 +307,17 @@ Create a visual that addresses the user's specific request while maintaining the
                   </option>
                 ))}
               </select>
+              {/* Start Over Button - only show if there are generated visuals */}
+              {messages.some(m => m.visuals && m.visuals.length > 0) && (
+                <Button
+                  onClick={handleStartOver}
+                  variant="outline"
+                  size="sm"
+                  className="text-orange-600 border-orange-300 hover:bg-orange-50"
+                >
+                  🔄 Start Over
+                </Button>
+              )}
               <Button onClick={onBack} variant="outline" size="sm">
                 Back to Products
               </Button>
@@ -351,7 +395,7 @@ Create a visual that addresses the user's specific request while maintaining the
                               <img
                                 src={visual.imageUrl}
                                 alt={`Generated visual ${index + 1}`}
-                                className="w-full h-48 object-cover"
+                                className="w-full h-auto object-contain max-h-96"
                                 onError={(e) => {
                                   console.log('Image URL failed, trying data URI:', visual.imageUrl);
                                   const dataUri = `data:${visual.mimeType};base64,${visual.data}`;
@@ -365,8 +409,8 @@ Create a visual that addresses the user's specific request while maintaining the
                               <img
                                 src={`data:${visual.mimeType};base64,${visual.data}`}
                                 alt={`Generated visual ${index + 1}`}
-                                className="w-full h-48 object-cover"
-                                onError={(e) => {
+                                className="w-full h-auto object-contain max-h-96"
+                                onError={() => {
                                   console.log('Data URI failed to load:', visual.mimeType, visual.data?.length);
                                 }}
                                 onLoad={() => {
@@ -381,14 +425,14 @@ Create a visual that addresses the user's specific request while maintaining the
                             <Button
                               onClick={() => handleDownload(visual, message.id, index)}
                               size="sm"
-                              className="bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 text-xs px-3 py-1"
+                              variant="outline"
+                              className="text-xs px-3 py-1 bg-white border-gray-300 text-gray-700 hover:bg-gray-50 hover:text-gray-900"
                             >
                               <Download className="w-3 h-3 mr-1" />
                               Download
                             </Button>
                             <Button
                               onClick={() => {
-                                setSelectedVisual(index);
                                 handleSelectVisual(visual);
                               }}
                               size="sm"

@@ -46,7 +46,6 @@ export default function ProductSelectionTab({ className = "" }: ProductSelection
   const [showVisualGeneration, setShowVisualGeneration] = useState(false);
   const [showAgenticChat, setShowAgenticChat] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
-  const [generatedVisual, setGeneratedVisual] = useState<{data: string, mimeType: string} | null>(null);
   
   const [filters, setFilters] = useState<Filters>({
     gender: [],
@@ -112,7 +111,6 @@ export default function ProductSelectionTab({ className = "" }: ProductSelection
   };
 
   const handleVisualSelected = (imageData: string, mimeType: string) => {
-    setGeneratedVisual({ data: imageData, mimeType });
     if (selectedProduct) {
       // Create product with generated visual
       const productWithVisual = {
@@ -149,7 +147,6 @@ export default function ProductSelectionTab({ className = "" }: ProductSelection
     setShowVisualGeneration(false);
     setShowAgenticChat(false);
     setSelectedProduct(null);
-    setGeneratedVisual(null);
   };
 
   const handleChatWithAgent = (product: Product) => {

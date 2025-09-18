@@ -10,64 +10,134 @@ export async function POST(req: Request) {
 
   try {
     const body = await req.json();
-    const { prompt, productName, productDescription, style = "professional product photography", count = 1 } = body;
+    const { 
+      prompt, 
+      count = 1,
+      productImage,
+      templateFields = {}
+    } = body;
 
     if (!prompt) {
       return NextResponse.json({ error: "Missing prompt" }, { status: 400 });
     }
 
+    // Extract template fields with defaults
+    const {
+      productSubject = 'premium product',
+      backgroundSurface = 'clean white seamless paper backdrop',
+      lightingSetup = 'three-point softbox setup',
+      lightingPurpose = 'highlight authentic materials without color distortion',
+      cameraAngle = '45-degree elevated view',
+      showcaseFeature = "the product's authentic form and material details",
+      focusDetail = 'material fidelity and exact color reproduction',
+      aspectRatio = '16:9 aspect ratio'
+    } = templateFields;
+
     const config = {
       responseModalities: ['IMAGE', 'TEXT'],
+      temperature:1.0,
     };
 
     const model = 'gemini-2.5-flash-image-preview';
     
-    // Google Gemini recommended product photography template with STRICT MATERIAL FIDELITY
-    const enhancedPrompt = `A high-resolution, studio-lit product photograph of a ${productDescription || productName || 'Michael Kors Atlas trainer'} on a ${style === 'Professional Photography' ? 'clean white seamless paper backdrop' : 'premium surface that complements the product'}.
+    // Helper function to convert image URL to base64
+    const getImageData = async (imageUrl: string) => {
+      if (!imageUrl) return null;
+      
+      try {
+        // If it's already a data URL, extract the base64 part
+        if (imageUrl.startsWith('data:')) {
+          const base64Match = imageUrl.match(/data:([^;]+);base64,(.+)/);
+          if (base64Match) {
+            return {
+              data: base64Match[2],
+              mimeType: base64Match[1]
+            };
+          }
+        }
+        
+        // If it's a regular URL, fetch and convert
+        const response = await fetch(imageUrl);
+        if (!response.ok) throw new Error('Failed to fetch image');
+        
+        const arrayBuffer = await response.arrayBuffer();
+        const base64 = Buffer.from(arrayBuffer).toString('base64');
+        const mimeType = response.headers.get('content-type') || 'image/jpeg';
+        
+        return {
+          data: base64,
+          mimeType
+        };
+      } catch (error) {
+        console.error('Error processing image:', error);
+        return null;
+      }
+    };
 
-CRITICAL MATERIAL ACCURACY REQUIREMENTS:
-- If this is an Atlas trainer in "Natural" color: MUST maintain the exact grayish-natural tone (NOT beige/tan/warm tones)
-- If mesh materials are described: PRESERVE the exact breathable mesh texture and appearance
-- If suede is mentioned: MAINTAIN the soft suede texture and original color exactly
-- If leather panels exist: KEEP smooth leather panels with their authentic finish
-- If sculptural rubber sole described: PRESERVE the exact sole design and color
+    // Get product image data if available
+    const imageData = productImage ? await getImageData(productImage) : null;
 
-EXACT PRODUCT REPRODUCTION MANDATORY:
-The product MUST be reproduced with 100% material and color accuracy to: "${productDescription || 'the original product description'}"
+    const enhancedPrompt = imageData 
+      ? `Create a hyper-realistic, studio-quality product photograph based on the provided product image reference. Place the product on a ${backgroundSurface}. 
 
-FORBIDDEN COLOR SHIFTS (CRITICAL):
-- NO changing "Natural" to beige, tan, brown, or any warmer tones
-- NO altering mesh texture, pattern, or color
-- NO modifying suede color, texture, or material appearance  
-- NO changing leather panel colors, finishes, or materials
-- NO altering sole design, color, proportions, or sculptural details
-- PRESERVE the exact cool-toned grayish "Natural" color as described
+PHOTOGRAPHY SETUP: The lighting is a ${lightingSetup} to ${lightingPurpose}. The camera angle is a ${cameraAngle} to showcase ${showcaseFeature}. Ultra-realistic studio photography, with sharp focus on ${focusDetail}. ${aspectRatio}.
 
-The lighting is a three-point softbox setup to highlight the authentic materials without any color temperature shifts or distortion. The camera angle is a 45-degree elevated view to showcase the product's authentic form and precise material details. Ultra-realistic, with sharp focus on maintaining exact color accuracy and material fidelity.
+STRICT PRESERVATION REQUIREMENTS:
+- NEVER alter, modify, or distort any text, fonts, logos, or brand markings visible on the product
+- PRESERVE all typography exactly as it appears in the original image
+- MAINTAIN the exact look and feel of all logos and brand elements
+- DO NOT change, enhance, or stylize any textual elements
+- KEEP all product labels, tags, and markings identical to the source
+- ENSURE brand integrity is absolutely maintained
+
+PROFESSIONAL PHOTOGRAPHY STANDARDS:
+- Use hyper-specific material reproduction: exact texture details, surface properties, and finish characteristics
+- Apply professional studio lighting techniques with precise shadow control and highlight placement
+- Implement macro-level detail capture with crystal-clear edge definition
+- Create museum-quality color accuracy and tonal reproduction
+- Position product with intentional composition following rule of thirds and professional framing
 
 Creative direction: ${prompt}
 
-STRICT MATERIAL PRESERVATION CHECKLIST:
-✓ Reproduce EXACT color described (especially "Natural" = cool grayish tone, NOT warm beige/tan)
-✓ Maintain ALL texture details (mesh, suede, leather) exactly as originally described
-✓ Preserve ALL design elements including sole shape, proportions, and sculptural features
-✓ Keep ALL logos, text, branding identical, legible, and undistorted
-✓ NO modifications to product materials, colors, textures, or design elements
-✓ Focus enhancement ONLY on lighting, background, and camera positioning
+FINAL REQUIREMENTS: The generated image must be immediately recognizable as the exact same product with identical branding, typography, and design elements. Focus enhancement ONLY on lighting, background, and camera positioning while preserving 100% product authenticity.`
+      : `Create a hyper-realistic, studio-quality product photograph of a ${productSubject} positioned on a ${backgroundSurface}.
 
-Generate a professional product photograph that showcases the authentic product with perfect material fidelity and exact color reproduction. The product must be immediately recognizable as the exact same item with identical materials, colors, and design. 16:9 aspect ratio.`;
+PHOTOGRAPHY SETUP: The lighting is a ${lightingSetup} to ${lightingPurpose}. The camera angle is a ${cameraAngle} to showcase ${showcaseFeature}. Ultra-realistic studio photography, with sharp focus on ${focusDetail}. ${aspectRatio}.
+
+PROFESSIONAL PHOTOGRAPHY STANDARDS:
+- Use hyper-specific material descriptions with exact texture details and surface properties
+- Apply professional studio lighting techniques with precise shadow control
+- Implement macro-level detail capture with crystal-clear definition
+- Create museum-quality color accuracy and tonal reproduction
+- Position subject with intentional composition following professional framing principles
+
+Creative direction: ${prompt}
+
+TECHNICAL SPECIFICATIONS: Professional commercial photography quality with sharp edge definition, accurate material representation, and studio-grade lighting execution.`;
 
     // Generate multiple images (limit to 4 max for performance)
     const imageCount = Math.min(Math.max(count, 1), 4);
     const generatePromises = Array.from({ length: imageCount }, () => {
+      const parts: Array<{ text: string } | { inlineData: { data: string; mimeType: string } }> = [
+        {
+          text: enhancedPrompt,
+        }
+      ];
+
+      // Add the product image if available
+      if (imageData) {
+        parts.push({
+          inlineData: {
+            data: imageData.data,
+            mimeType: imageData.mimeType,
+          },
+        });
+      }
+
       const contents = [
         {
           role: 'user' as const,
-          parts: [
-            {
-              text: enhancedPrompt,
-            },
-          ],
+          parts,
         },
       ];
 
@@ -79,6 +149,13 @@ Generate a professional product photograph that showcases the authentic product 
     });
 
     console.log(`Generating ${imageCount} visuals...`);
+    console.log('Product image provided:', !!productImage);
+    console.log('Image data processed:', !!imageData);
+    if (imageData) {
+      console.log('Image mime type:', imageData.mimeType);
+      console.log('Image data length:', imageData.data.length);
+    }
+    
     const responses = await Promise.all(generatePromises);
     console.log('Generated responses count:', responses.length);
 

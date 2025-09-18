@@ -19,7 +19,7 @@ interface VisualLibraryWrapperProps {
 }
 
 export function VisualLibraryWrapper({ children, onVisualsUpdate }: VisualLibraryWrapperProps) {
-  const [savedVisuals, setSavedVisuals] = useState<SavedVisual[]>([]);
+  const [, setSavedVisuals] = useState<SavedVisual[]>([]);
 
   useEffect(() => {
     // Listen for saveVisual events
