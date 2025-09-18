@@ -12,6 +12,7 @@ export async function POST(req: Request) {
     const body = await req.json();
     const prompt = (body?.prompt as string) || "";
     const model = (body?.model as string) || "imagen-4.0-fast-generate-001";
+    const aspectRatio = (body?.aspectRatio as string) || "1:1";
 
     if (!prompt) {
       return NextResponse.json({ error: "Missing prompt" }, { status: 400 });
@@ -21,7 +22,7 @@ export async function POST(req: Request) {
       model,
       prompt,
       config: {
-        aspectRatio: "16:9",
+        aspectRatio,
       },
     });
 

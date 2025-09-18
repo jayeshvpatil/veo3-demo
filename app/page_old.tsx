@@ -97,6 +97,34 @@ const VeoStudio: React.FC = () => {
   }, [prompt, showImageTools, imageFile, generatedImage]);
 
   const resetAll = () => {
+
+  // Imagen-specific prompt
+  const [imagePrompt, setImagePrompt] = useState("");
+
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [imagenBusy, setImagenBusy] = useState(false);
+  const [generatedImage, setGeneratedImage] = useState<string | null>(null); // data URL
+
+  const [operationName, setOperationName] = useState<VeoOperationName>(null);
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [videoUrl, setVideoUrl] = useState<string | null>(null);
+  const videoBlobRef = useRef<Blob | null>(null);
+  const trimmedBlobRef = useRef<Blob | null>(null);
+  const trimmedUrlRef = useRef<string | null>(null);
+  const originalVideoUrlRef = useRef<string | null>(null);
+
+  const [showImageTools, setShowImageTools] = useState(false);
+
+  // Image input ref
+  const imageInputRef = useRef<HTMLInputElement>(null);
+
+  const canStart = useMemo(() => {
+    if (!prompt || !prompt.trim()) return false;
+    if (showImageTools && !(imageFile || generatedImage)) return false;
+    return true;
+  }, [prompt, showImageTools, imageFile, generatedImage]);
+
+  const resetAll = () => {
     setPrompt("");
     setNegativePrompt("");
     setAspectRatio("16:9");
