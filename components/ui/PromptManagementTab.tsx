@@ -35,8 +35,6 @@ interface PromptManagementTabProps {
   setVisualStyle: (value: string) => void;
   cameraAngle: string;
   setCameraAngle: (value: string) => void;
-  description: string;
-  setDescription: (value: string) => void;
   className?: string;
 }
 
@@ -62,8 +60,6 @@ export default function PromptManagementTab({
   setVisualStyle,
   cameraAngle,
   setCameraAngle,
-  description,
-  setDescription,
   className = "",
 }: PromptManagementTabProps) {
   const [isDragging, setIsDragging] = React.useState(false);
@@ -165,9 +161,7 @@ export default function PromptManagementTab({
       completePrompt = `${completePrompt}. Shot with ${cameraAngle} camera angle`;
     }
     
-    if (description && description !== prompt) {
-      completePrompt = `${completePrompt}. Product details: ${description}`;
-    }
+    // Product description removed from video generation
     
     return completePrompt;
   };
@@ -178,8 +172,8 @@ export default function PromptManagementTab({
         
         {/* Header */}
         <div className="text-center">
-          <h2 className="text-3xl font-bold text-gray-900 mb-2">Product Display Studio</h2>
-          <p className="text-gray-600">Create cinematic product showcase videos with professional camera movements</p>
+          <h2 className="text-3xl font-bold text-gray-900 mb-2">Video Studio</h2>
+          <p className="text-gray-600">Transform your product images into dynamic showcase videos</p>
         </div>
 
         {/* Quick Templates */}
@@ -215,11 +209,11 @@ export default function PromptManagementTab({
             
             {/* Custom Prompt */}
             <div className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">✨ Custom Prompt</h3>
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">✨ Video Description</h3>
               <textarea
                 value={prompt}
                 onChange={(e) => setPrompt(e.target.value)}
-                placeholder="Describe your product showcase video scene..."
+                placeholder="Create a dynamic video showcasing the product. E.g., 'Smooth 360-degree rotation revealing all details with cinematic lighting and elegant camera movement' or 'Dynamic zoom-in from wide shot to close-up highlighting texture and craftsmanship'"
                 className="w-full border border-gray-300 rounded-lg px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-none"
                 rows={6}
               />
@@ -267,23 +261,8 @@ export default function PromptManagementTab({
             </div>
           </div>
 
-          {/* Right Column - Product & Controls */}
+          {/* Right Column - Image & Controls */}
           <div className="space-y-6">
-            
-            {/* Product Context */}
-            <div className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">
-                📦 Product Details
-                {!description && <span className="text-sm font-normal text-gray-500 ml-2">(select from Products tab)</span>}
-              </h3>
-              <textarea
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
-                placeholder="Product details will appear here when you select a product..."
-                className="w-full border border-gray-300 rounded-lg px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-none"
-                rows={4}
-              />
-            </div>
 
             {/* Image Tools */}
             <div className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm">
@@ -416,7 +395,7 @@ export default function PromptManagementTab({
         </div>
 
         {/* Complete Prompt Preview */}
-        {(visualStyle || cameraAngle || (description && description !== prompt)) && (
+        {(visualStyle || cameraAngle) && (
           <div className="bg-gradient-to-r from-blue-50 to-purple-50 border border-blue-200 rounded-xl p-6">
             <h3 className="text-lg font-semibold text-blue-900 mb-3">🎯 Complete Prompt Preview</h3>
             <div className="bg-white rounded-lg p-4 border border-blue-200">

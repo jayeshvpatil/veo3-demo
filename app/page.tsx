@@ -22,7 +22,7 @@ const VeoStudio: React.FC = () => {
   const [negativePrompt, setNegativePrompt] = useState("");
   const [aspectRatio, setAspectRatio] = useState("16:9");
   const [selectedModel, setSelectedModel] = useState(
-    "veo-3.0-generate-preview"
+    "veo-2.0-generate-001" // More stable model with better quota availability
   );
 
   // Tab state management
@@ -164,13 +164,11 @@ const VeoStudio: React.FC = () => {
       completePrompt = `${completePrompt}. Shot with ${cameraAngle} camera angle`;
     }
     
-    // Add product description context if available
-    if (description && description !== prompt) {
-      completePrompt = `${completePrompt}. Product details: ${description}`;
-    }
+    // DO NOT add product description to video prompts - videos should be based on the image content
+    // Product descriptions are static and don't add value to video generation
     
     return completePrompt;
-  }, [prompt, visualStyle, cameraAngle, description]);
+  }, [prompt, visualStyle, cameraAngle]);
 
   // Start Veo job
   const startGeneration = useCallback(async () => {
@@ -206,9 +204,33 @@ const VeoStudio: React.FC = () => {
         body: form,
       });
       const json = await resp.json();
+      
+      if (!resp.ok) {
+        // Handle specific error types from the API
+        let errorMessage = json.error || "Failed to start video generation";
+        
+        if (json.type === "quota_exceeded") {
+          errorMessage = `API quota exceeded. This usually means:
+• Daily/hourly API limits reached
+• Billing account needs to be set up  
+• Try again in a few hours
+
+Check your Google Cloud Console for quota details.`;
+        } else if (json.type === "permission_denied") {
+          errorMessage = "Permission denied. Please check your API key and project settings.";
+        } else if (json.type === "invalid_argument") {
+          errorMessage = "Invalid request. Please check your inputs and try again.";
+        }
+        
+        alert(errorMessage);
+        setIsGenerating(false);
+        return;
+      }
+      
       setOperationName(json?.name || null);
     } catch (e) {
       console.error(e);
+      alert("Network error occurred. Please check your connection and try again.");
       setIsGenerating(false);
     }
   }, [
@@ -370,8 +392,6 @@ const VeoStudio: React.FC = () => {
               setVisualStyle={setVisualStyle}
               cameraAngle={cameraAngle}
               setCameraAngle={setCameraAngle}
-              description={description}
-              setDescription={setDescription}
             />
           </TabsContent>
           

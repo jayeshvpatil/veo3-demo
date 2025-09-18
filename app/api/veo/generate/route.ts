@@ -63,8 +63,38 @@ export async function POST(req: Request) {
     return NextResponse.json({ name });
   } catch (error: unknown) {
     console.error("Error starting Veo generation:", error);
+    
+    // Log the full error for debugging
+    if (error && typeof error === 'object') {
+      console.error("Error details:", JSON.stringify(error, null, 2));
+    }
+    
+    // Handle quota exceeded errors specifically
+    if (error && typeof error === 'object' && 'status' in error && error.status === 429) {
+      return NextResponse.json(
+        { 
+          error: "API quota exceeded. This usually means:\n• Daily/hourly API limits reached\n• Billing account needs to be set up\n• Try again in a few hours",
+          type: "quota_exceeded"
+        },
+        { status: 429 }
+      );
+    }
+    
+    // Handle other API errors
+    if (error && typeof error === 'object' && 'status' in error) {
+      const apiError = error as { status: number; message?: string };
+      return NextResponse.json(
+        { 
+          error: apiError.message || "API request failed",
+          type: "api_error"
+        },
+        { status: apiError.status }
+      );
+    }
+    
+    // Generic error fallback
     return NextResponse.json(
-      { error: "Failed to start generation" },
+      { error: "Failed to start video generation" },
       { status: 500 }
     );
   }

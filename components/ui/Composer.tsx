@@ -43,8 +43,6 @@ interface ComposerProps {
   setVisualStyle: (value: string) => void;
   cameraAngle: string;
   setCameraAngle: (value: string) => void;
-  description: string;
-  setDescription: (value: string) => void;
 }
 
 const Composer: React.FC<ComposerProps> = ({
@@ -69,8 +67,6 @@ const Composer: React.FC<ComposerProps> = ({
   setVisualStyle,
   cameraAngle,
   setCameraAngle,
-  description,
-  setDescription,
 }) => {
   const [isDragging, setIsDragging] = React.useState(false);
   const fileInputRef = React.useRef<HTMLInputElement>(null);
@@ -142,9 +138,7 @@ const Composer: React.FC<ComposerProps> = ({
       completePrompt = `${completePrompt}. Shot with ${cameraAngle} camera angle`;
     }
     
-    if (description && description !== prompt) {
-      completePrompt = `${completePrompt}. Product details: ${description}`;
-    }
+    // Product description removed from video generation
     
     return completePrompt;
   };
@@ -296,26 +290,12 @@ const Composer: React.FC<ComposerProps> = ({
           </div>
         </div>
 
-        {/* Product Description Field */}
-        <div className="mb-3">
-          <label className="block text-xs font-medium text-slate-900/70 mb-1">
-            Product Description {!description && "(will appear when you select a product)"}
-          </label>
-          <textarea
-            value={description}
-            onChange={(e) => setDescription(e.target.value)}
-            placeholder="Product description will appear here when you select a product from the sidebar..."
-            className="w-full bg-white/50 border border-white/30 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 resize-none"
-            rows={2}
-          />
-        </div>
-
         <textarea
           value={prompt}
           onChange={(e) => setPrompt(e.target.value)}
-          placeholder="Generate a video with text and frames..."
+          placeholder="Create a dynamic video showcasing the product. E.g., 'Smooth 360-degree rotation revealing all details with cinematic lighting and dynamic camera movement'"
           className="w-full bg-transparent focus:outline-none resize-none text-base font-normal placeholder-slate-800/60"
-          rows={2}
+          rows={3}
         />
         
         <div className="flex items-center justify-between mt-3">
@@ -329,7 +309,7 @@ const Composer: React.FC<ComposerProps> = ({
             </button>
             
             {/* Complete Prompt Preview - Tooltip only */}
-            {(visualStyle || cameraAngle || (description && description !== prompt)) && (
+            {(visualStyle || cameraAngle) && (
               <div className="relative group">
                 <div className="h-10 w-10 flex items-center justify-center bg-white/50 rounded-full hover:bg-white/70 cursor-help">
                   <span className="text-xs font-semibold text-slate-700">i</span>

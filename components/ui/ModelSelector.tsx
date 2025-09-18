@@ -11,15 +11,15 @@ const ModelSelector: React.FC<ModelSelectorProps> = ({
   setSelectedModel,
 }) => {
   const models = [
+    "veo-2.0-generate-001", // More stable, might have better quota availability
+    "veo-3.0-fast-generate-preview", // Fast model
     "veo-3.0-generate-preview",
-    "veo-3.0-fast-generate-preview",
-    "veo-2.0-generate-001",
   ];
 
   const formatModelName = (model: string) => {
+    if (model.includes("veo-2.0")) return "Veo 2 (Recommended)";
     if (model.includes("veo-3.0-fast")) return "Veo 3 - Fast";
-    if (model.includes("veo-3.0")) return "Veo 3";
-    if (model.includes("veo-2.0")) return "Veo 2";
+    if (model.includes("veo-3.0")) return "Veo 3 - Standard";
     return model;
   };
 
