@@ -7,7 +7,7 @@ import React, {
   useRef,
   useState,
 } from "react";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/Tabs";
+import { SidebarNav, MobileMenuButton } from "@/components/ui/SidebarNav";
 import ProductSelectionTab from "@/components/ui/ProductSelectionTab";
 import PromptManagementTab from "@/components/ui/PromptManagementTab";
 import ReviewTab from "@/components/ui/ReviewTab";
@@ -27,6 +27,10 @@ const VeoStudio: React.FC = () => {
 
   // Tab state management
   const [activeTab, setActiveTab] = useState("products");
+  
+  // Sidebar state management
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(true);
 
   // Saved visuals for library
   const [savedVisuals, setSavedVisuals] = useState<Array<{
@@ -338,89 +342,107 @@ Check your Google Cloud Console for quota details.`;
   };
 
   return (
-    <div className="h-screen bg-gray-50">
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="h-full flex flex-col">
-        {/* Header with Tabs */}
-        <div className="bg-white border-b border-gray-200 shadow-sm">
-          <div className="px-8 py-6">
-            <h1 className="text-2xl font-semibold text-gray-900 mb-4">
-              Further AI : Product Display Demo
-            </h1>
-            <TabsList>
-              <TabsTrigger value="products">
-                �️ Product & Visual Selection
-              </TabsTrigger>
-              <TabsTrigger value="prompt">
-                🎬 Video Creation Studio
-              </TabsTrigger>
-              <TabsTrigger value="review">
-                📱 Generated Videos & Review
-              </TabsTrigger>
-              <TabsTrigger value="library">
-                🖼️ Visual Library
-              </TabsTrigger>
-            </TabsList>
-          </div>
-        </div>
+    <div className="h-screen bg-slate-900 flex">
+      {/* Sidebar Navigation */}
+      <SidebarNav 
+        activeTab={activeTab} 
+        setActiveTab={setActiveTab}
+        isOpen={sidebarOpen}
+        setIsOpen={setSidebarOpen}
+        isCollapsed={sidebarCollapsed}
+        setIsCollapsed={setSidebarCollapsed}
+      />
 
-        {/* Tab Content */}
-        <div className="flex-1">
-          <TabsContent value="products" className="h-full overflow-y-auto">
-            <ProductSelectionTab />
-          </TabsContent>
+      {/* Main Content Area */}
+      <div className="flex-1 flex flex-col lg:ml-0">
+        {/* Header */}
+        <header className="bg-slate-900 border-b border-slate-800">
+          <div className="px-4 lg:px-8 py-4 lg:py-6">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-4">
+                <MobileMenuButton onClick={() => setSidebarOpen(true)} />
+                <div>
+                  <h1 className="text-xl lg:text-2xl font-semibold text-white">
+                    Product Feeds
+                  </h1>
+                  <p className="text-sm text-slate-400 mt-1">
+                    Manage your product feeds and generate creative content
+                  </p>
+                </div>
+              </div>
+              <button className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition-colors">
+                New Feed
+              </button>
+            </div>
+          </div>
+        </header>
+
+        {/* Content Area */}
+        <main className="flex-1 overflow-hidden bg-slate-900">
+          {activeTab === "products" && (
+            <div className="h-full overflow-y-auto">
+              <ProductSelectionTab />
+            </div>
+          )}
           
-          <TabsContent value="prompt" className="h-full overflow-hidden">
-            <PromptManagementTab
-              prompt={prompt}
-              setPrompt={setPrompt}
-              selectedModel={selectedModel}
-              setSelectedModel={setSelectedModel}
-              canStart={canStart}
-              isGenerating={isGenerating}
-              startGeneration={startGeneration}
-              showImageTools={showImageTools}
-              setShowImageTools={setShowImageTools}
-              imagePrompt={imagePrompt}
-              setImagePrompt={setImagePrompt}
-              imagenBusy={imagenBusy}
-              onPickImage={onPickImage}
-              generateWithImagen={generateWithImagen}
-              imageFile={imageFile}
-              generatedImage={generatedImage}
-              resetAll={resetAll}
-              visualStyle={visualStyle}
-              setVisualStyle={setVisualStyle}
-              cameraAngle={cameraAngle}
-              setCameraAngle={setCameraAngle}
-            />
-          </TabsContent>
+          {activeTab === "prompt" && (
+            <div className="h-full overflow-hidden">
+              <PromptManagementTab
+                prompt={prompt}
+                setPrompt={setPrompt}
+                selectedModel={selectedModel}
+                setSelectedModel={setSelectedModel}
+                canStart={canStart}
+                isGenerating={isGenerating}
+                startGeneration={startGeneration}
+                showImageTools={showImageTools}
+                setShowImageTools={setShowImageTools}
+                imagePrompt={imagePrompt}
+                setImagePrompt={setImagePrompt}
+                imagenBusy={imagenBusy}
+                onPickImage={onPickImage}
+                generateWithImagen={generateWithImagen}
+                imageFile={imageFile}
+                generatedImage={generatedImage}
+                resetAll={resetAll}
+                visualStyle={visualStyle}
+                setVisualStyle={setVisualStyle}
+                cameraAngle={cameraAngle}
+                setCameraAngle={setCameraAngle}
+              />
+            </div>
+          )}
           
-          <TabsContent value="review" className="h-full">
-            <ReviewTab
-              videoUrl={videoUrl}
-              isGenerating={isGenerating}
-              onOutputChanged={handleTrimmedOutput}
-              onDownload={downloadVideo}
-              onResetTrim={handleResetTrimState}
-              prompt={buildCompletePrompt()}
-            />
-          </TabsContent>
+          {activeTab === "review" && (
+            <div className="h-full">
+              <ReviewTab
+                videoUrl={videoUrl}
+                isGenerating={isGenerating}
+                onOutputChanged={handleTrimmedOutput}
+                onDownload={downloadVideo}
+                onResetTrim={handleResetTrimState}
+                prompt={buildCompletePrompt()}
+              />
+            </div>
+          )}
           
-          <TabsContent value="library" className="h-full">
-            <VisualsLibraryTab
-              savedVisuals={savedVisuals}
-              onDeleteVisual={(visualId) => {
-                setSavedVisuals(prev => prev.filter(v => v.id !== visualId));
-              }}
-              onReuseVisual={(visual) => {
-                // Switch to prompt tab and set the prompt
-                setPrompt(visual.prompt);
-                setActiveTab("prompt");
-              }}
-            />
-          </TabsContent>
-        </div>
-      </Tabs>
+          {activeTab === "library" && (
+            <div className="h-full">
+              <VisualsLibraryTab
+                savedVisuals={savedVisuals}
+                onDeleteVisual={(visualId) => {
+                  setSavedVisuals(prev => prev.filter(v => v.id !== visualId));
+                }}
+                onReuseVisual={(visual) => {
+                  // Switch to prompt tab and set the prompt
+                  setPrompt(visual.prompt);
+                  setActiveTab("prompt");
+                }}
+              />
+            </div>
+          )}
+        </main>
+      </div>
 
       {/* Hidden file input */}
       <input

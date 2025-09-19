@@ -170,7 +170,7 @@ export default function ProductSelectionTab({ className = "" }: ProductSelection
       <div className={`h-full flex items-center justify-center ${className}`}>
         <div className="text-center">
           <div className="text-4xl mb-4">📦</div>
-          <div className="text-lg text-gray-600">Loading products...</div>
+          <div className="text-lg text-slate-300">Loading products...</div>
         </div>
       </div>
     );
@@ -207,17 +207,17 @@ export default function ProductSelectionTab({ className = "" }: ProductSelection
   }
 
   return (
-    <div className={`h-full flex ${className}`}>
+    <div className={`h-full flex bg-slate-900 ${className}`}>
       {/* Filters Sidebar */}
-      <div className={`bg-white border-r border-gray-200 transition-all duration-300 ${
+      <div className={`bg-slate-800 border-r border-slate-700 transition-all duration-300 ${
         showFilters ? 'w-80' : 'w-0 overflow-hidden'
       }`}>
         <div className="p-6 h-full overflow-y-auto">
           <div className="flex items-center justify-between mb-6">
-            <h3 className="text-lg font-semibold text-gray-900">Filters</h3>
+            <h3 className="text-lg font-semibold text-white">Filters</h3>
             <button
               onClick={clearAllFilters}
-              className="text-sm text-blue-600 hover:text-blue-800"
+              className="text-sm text-blue-400 hover:text-blue-300"
             >
               Clear All
             </button>
@@ -227,7 +227,7 @@ export default function ProductSelectionTab({ className = "" }: ProductSelection
             {/* Category Filter */}
             {filterOptions.category.length > 0 && (
               <div>
-                <h4 className="text-sm font-medium text-gray-700 mb-3">Category</h4>
+                <h4 className="text-sm font-medium text-white mb-3">Category</h4>
                 <div className="space-y-2">
                   {filterOptions.category.map(category => (
                     <label key={category} className="flex items-center gap-2 text-sm">
@@ -235,9 +235,9 @@ export default function ProductSelectionTab({ className = "" }: ProductSelection
                         type="checkbox"
                         checked={filters.category.includes(category)}
                         onChange={() => toggleFilter('category', category)}
-                        className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                        className="rounded border-slate-600 text-blue-600 focus:ring-blue-500"
                       />
-                      <span className="text-gray-700 capitalize">{category}</span>
+                      <span className="text-slate-300 capitalize">{category}</span>
                     </label>
                   ))}
                 </div>
@@ -247,7 +247,7 @@ export default function ProductSelectionTab({ className = "" }: ProductSelection
             {/* Gender Filter */}
             {filterOptions.gender.length > 0 && (
               <div>
-                <h4 className="text-sm font-medium text-gray-700 mb-3">Gender</h4>
+                <h4 className="text-sm font-medium text-white mb-3">Gender</h4>
                 <div className="space-y-2">
                   {filterOptions.gender.map(gender => (
                     <label key={gender} className="flex items-center gap-2 text-sm">
@@ -255,9 +255,9 @@ export default function ProductSelectionTab({ className = "" }: ProductSelection
                         type="checkbox"
                         checked={filters.gender.includes(gender)}
                         onChange={() => toggleFilter('gender', gender)}
-                        className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                        className="rounded border-slate-600 text-blue-600 focus:ring-blue-500"
                       />
-                      <span className="text-gray-700 capitalize">{gender}</span>
+                      <span className="text-slate-300 capitalize">{gender}</span>
                     </label>
                   ))}
                 </div>
@@ -267,7 +267,7 @@ export default function ProductSelectionTab({ className = "" }: ProductSelection
             {/* Availability Filter */}
             {filterOptions.availability.length > 0 && (
               <div>
-                <h4 className="text-sm font-medium text-gray-700 mb-3">Availability</h4>
+                <h4 className="text-sm font-medium text-white mb-3">Availability</h4>
                 <div className="space-y-2">
                   {filterOptions.availability.map(availability => (
                     <label key={availability} className="flex items-center gap-2 text-sm">
@@ -275,9 +275,9 @@ export default function ProductSelectionTab({ className = "" }: ProductSelection
                         type="checkbox"
                         checked={filters.availability.includes(availability)}
                         onChange={() => toggleFilter('availability', availability)}
-                        className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                        className="rounded border-slate-600 text-blue-600 focus:ring-blue-500"
                       />
-                      <span className="text-gray-700 capitalize">{availability}</span>
+                      <span className="text-slate-300 capitalize">{availability}</span>
                     </label>
                   ))}
                 </div>
@@ -287,7 +287,7 @@ export default function ProductSelectionTab({ className = "" }: ProductSelection
             {/* Brand Filter */}
             {filterOptions.brand.length > 0 && (
               <div>
-                <h4 className="text-sm font-medium text-gray-700 mb-3">Brand</h4>
+                <h4 className="text-sm font-medium text-white mb-3">Brand</h4>
                 <div className="space-y-2">
                   {filterOptions.brand.slice(0, 8).map(brand => (
                     <label key={brand} className="flex items-center gap-2 text-sm">
@@ -295,9 +295,9 @@ export default function ProductSelectionTab({ className = "" }: ProductSelection
                         type="checkbox"
                         checked={filters.brand.includes(brand)}
                         onChange={() => toggleFilter('brand', brand)}
-                        className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                        className="rounded border-slate-600 text-blue-600 focus:ring-blue-500"
                       />
-                      <span className="text-gray-700">{brand}</span>
+                      <span className="text-slate-300">{brand}</span>
                     </label>
                   ))}
                 </div>
@@ -310,11 +310,11 @@ export default function ProductSelectionTab({ className = "" }: ProductSelection
       {/* Main Product Area */}
       <div className="flex-1 flex flex-col">
         {/* Header */}
-        <div className="bg-white border-b border-gray-200 p-6">
+        <div className="bg-slate-800 border-b border-slate-700 p-6">
           <div className="flex items-center justify-between">
             <div>
-              <h2 className="text-2xl font-semibold text-gray-900">Michael Kors Products</h2>
-              <p className="text-gray-600 mt-1">
+              <h2 className="text-2xl font-semibold text-white">Michael Kors Products</h2>
+              <p className="text-slate-300 mt-1">
                 {filteredProducts.length} of {products.length} products
                 {selectedId && " • 1 selected for video generation"}
               </p>
@@ -325,24 +325,24 @@ export default function ProductSelectionTab({ className = "" }: ProductSelection
                 onClick={() => setShowFilters(!showFilters)}
                 className={`flex items-center gap-2 px-4 py-2 rounded-lg border transition-colors ${
                   showFilters 
-                    ? 'bg-blue-50 border-blue-200 text-blue-700' 
-                    : 'border-gray-300 text-gray-700 hover:bg-gray-50'
+                    ? 'bg-blue-600 border-blue-500 text-white' 
+                    : 'border-slate-600 text-slate-300 hover:bg-slate-700'
                 }`}
               >
                 <Filter size={16} />
                 Filters
               </button>
               
-              <div className="flex rounded-lg border border-gray-300 overflow-hidden">
+              <div className="flex rounded-lg border border-slate-600 overflow-hidden">
                 <button
                   onClick={() => setViewMode('grid')}
-                  className={`p-2 ${viewMode === 'grid' ? 'bg-blue-50 text-blue-600' : 'text-gray-600 hover:bg-gray-50'}`}
+                  className={`p-2 ${viewMode === 'grid' ? 'bg-blue-600 text-white' : 'text-slate-400 hover:bg-slate-700'}`}
                 >
                   <Grid3X3 size={16} />
                 </button>
                 <button
                   onClick={() => setViewMode('list')}
-                  className={`p-2 ${viewMode === 'list' ? 'bg-blue-50 text-blue-600' : 'text-gray-600 hover:bg-gray-50'}`}
+                  className={`p-2 ${viewMode === 'list' ? 'bg-blue-600 text-white' : 'text-slate-400 hover:bg-slate-700'}`}
                 >
                   <List size={16} />
                 </button>
@@ -352,9 +352,9 @@ export default function ProductSelectionTab({ className = "" }: ProductSelection
         </div>
 
         {/* Products Grid/List */}
-        <div className="flex-1 overflow-y-auto p-6">
+        <div className="flex-1 overflow-y-auto p-6 bg-slate-900">
           {filteredProducts.length === 0 ? (
-            <div className="flex flex-col items-center justify-center h-full text-gray-500">
+            <div className="flex flex-col items-center justify-center h-full text-slate-400">
               <div className="text-6xl mb-4">📦</div>
               <div className="text-xl mb-2">No products found</div>
               <div className="text-sm">Try adjusting your filters</div>
@@ -376,10 +376,10 @@ export default function ProductSelectionTab({ className = "" }: ProductSelection
               {filteredProducts.map(product => (
                 <div 
                   key={product.id} 
-                  className={`relative group border border-gray-200 rounded-lg overflow-hidden transition-all duration-200 hover:shadow-lg ${
+                  className={`relative group border border-slate-600 bg-slate-800 rounded-lg overflow-hidden transition-all duration-200 hover:shadow-lg hover:border-slate-500 ${
                     selectedId === product.id 
-                      ? 'ring-2 ring-blue-500 bg-blue-50' 
-                      : 'hover:border-gray-300'
+                      ? 'ring-2 ring-blue-500 bg-blue-900/20' 
+                      : ''
                   } ${viewMode === 'list' ? 'flex' : ''}`}
                 >
                   <div className={`relative ${viewMode === 'list' ? 'w-32 h-32 flex-shrink-0' : 'aspect-square'}`}>
@@ -408,18 +408,18 @@ export default function ProductSelectionTab({ className = "" }: ProductSelection
                   </div>
                   
                   <div className={`p-4 ${viewMode === 'list' ? 'flex-1' : ''}`}>
-                    <h3 className="font-medium text-gray-900 mb-2 line-clamp-2">
+                    <h3 className="font-medium text-white mb-2 line-clamp-2">
                       {product.title}
                     </h3>
                     
                     <div className="flex flex-wrap gap-1 mb-3">
                       {product.gender && (
-                        <span className="text-xs px-2 py-1 bg-gray-100 text-gray-600 rounded-full">
+                        <span className="text-xs px-2 py-1 bg-slate-700 text-slate-300 rounded-full">
                           {product.gender}
                         </span>
                       )}
                       {product.category && (
-                        <span className="text-xs px-2 py-1 bg-blue-100 text-blue-600 rounded-full">
+                        <span className="text-xs px-2 py-1 bg-blue-900/50 text-blue-300 rounded-full">
                           {product.category}
                         </span>
                       )}
@@ -431,7 +431,7 @@ export default function ProductSelectionTab({ className = "" }: ProductSelection
                         className={`w-full flex items-center justify-center gap-2 py-2 px-4 rounded-lg font-medium transition-colors ${
                           selectedId === product.id
                             ? 'bg-purple-600 text-white'
-                            : 'bg-gray-100 text-gray-700 hover:bg-purple-600 hover:text-white'
+                            : 'bg-slate-700 text-slate-300 hover:bg-purple-600 hover:text-white'
                         }`}
                       >
                         <Sparkles size={16} />
@@ -440,7 +440,7 @@ export default function ProductSelectionTab({ className = "" }: ProductSelection
                       
                       <button
                         onClick={() => handleChatWithAgent(product)}
-                        className="w-full flex items-center justify-center gap-2 py-1.5 px-4 rounded-lg font-medium transition-colors bg-white border border-purple-200 text-purple-600 hover:bg-purple-50"
+                        className="w-full flex items-center justify-center gap-2 py-1.5 px-4 rounded-lg font-medium transition-colors bg-slate-700 border border-purple-500 text-purple-300 hover:bg-purple-600 hover:text-white"
                       >
                         <MessageCircle size={14} />
                         Chat with AI Agent
