@@ -4,7 +4,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import Image from 'next/image';
 import { Filter, Star, Grid3X3, List, Sparkles, MessageCircle } from 'lucide-react';
 import { useProduct } from '../../contexts/ProductContext';
-import { VisualGeneration } from './VisualGeneration';
+import VisualGeneration from './VisualGeneration';
 import { AgenticVisualChat } from './AgenticVisualChat';
 
 export interface Product {

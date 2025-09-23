@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Button } from './Button';
 import { Download, Loader2, Sparkles, Check } from 'lucide-react';
 import { useProduct } from '../../contexts/ProductContext';
+import { useBrandGuidelines } from '../../contexts/BrandGuidelinesContext';
 
 interface VisualGenerationProps {
   productName: string;
@@ -85,8 +86,9 @@ const styleTemplates = {
   }
 };
 
-export function VisualGeneration({ productName, productDescription, productImage, onVisualSelected, onBack }: VisualGenerationProps) {
+export default function VisualGeneration({ productName, productDescription, productImage, onVisualSelected, onBack }: VisualGenerationProps) {
   const { saveVisualToLibrary } = useProduct();
+  const { getBrandPromptAdditions } = useBrandGuidelines();
   const [prompt, setPrompt] = useState('Create a stunning, professional product photo with perfect lighting and premium background');
   const [selectedStyle, setSelectedStyle] = useState('professional');
   const [numberOfVisuals, setNumberOfVisuals] = useState(2);
@@ -159,6 +161,7 @@ export function VisualGeneration({ productName, productDescription, productImage
           style: visualStyles.find(s => s.id === selectedStyle)?.description || 'professional product photography',
           count: numberOfVisuals,
           productImage: productImage, // Include the product image
+          brandGuidelines: getBrandPromptAdditions(), // Include brand guidelines
           templateFields: {
             productSubject,
             backgroundSurface,

@@ -11,7 +11,8 @@ import {
   Menu,
   X,
   Home,
-  Settings
+  Settings,
+  FileText
 } from "lucide-react";
 
 interface SidebarNavProps {
@@ -28,7 +29,13 @@ const navigationItems = [
     value: "products",
     label: "Product & Visual Selection",
     icon: ShoppingCart,
-    shortLabel: "Product"
+    shortLabel: "Assets"
+  },
+  {
+    value: "brand-guidelines",
+    label: "Brand Guidelines Management",
+    icon: FileText,
+    shortLabel: "Brand Guidelines"
   },
   {
     value: "prompt",

@@ -12,12 +12,15 @@ import ProductSelectionTab from "@/components/ui/ProductSelectionTab";
 import PromptManagementTab from "@/components/ui/PromptManagementTab";
 import ReviewTab from "@/components/ui/ReviewTab";
 import VisualsLibraryTab from "@/components/ui/VisualsLibraryTab";
+import BrandGuidelines from "@/components/ui/BrandGuidelines";
+import { useBrandGuidelines } from "@/contexts/BrandGuidelinesContext";
 
 type VeoOperationName = string | null;
 
 const POLL_INTERVAL_MS = 5000;
 
 const VeoStudio: React.FC = () => {
+  const { getBrandPromptAdditions } = useBrandGuidelines();
   const [prompt, setPrompt] = useState(""); // Video prompt
   const [negativePrompt, setNegativePrompt] = useState("");
   const [aspectRatio, setAspectRatio] = useState("16:9");
@@ -168,11 +171,17 @@ const VeoStudio: React.FC = () => {
       completePrompt = `${completePrompt}. Shot with ${cameraAngle} camera angle`;
     }
     
+    // Add brand guidelines
+    const brandGuidelines = getBrandPromptAdditions();
+    if (brandGuidelines) {
+      completePrompt = `${completePrompt}\n\n${brandGuidelines}`;
+    }
+    
     // DO NOT add product description to video prompts - videos should be based on the image content
     // Product descriptions are static and don't add value to video generation
     
     return completePrompt;
-  }, [prompt, visualStyle, cameraAngle]);
+  }, [prompt, visualStyle, cameraAngle, getBrandPromptAdditions]);
 
   // Start Veo job
   const startGeneration = useCallback(async () => {
@@ -382,6 +391,12 @@ Check your Google Cloud Console for quota details.`;
           {activeTab === "products" && (
             <div className="h-full overflow-y-auto">
               <ProductSelectionTab />
+            </div>
+          )}
+          
+          {activeTab === "brand-guidelines" && (
+            <div className="h-full overflow-hidden">
+              <BrandGuidelines />
             </div>
           )}
           

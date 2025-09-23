@@ -14,7 +14,8 @@ export async function POST(req: Request) {
       prompt, 
       count = 1,
       productImage,
-      templateFields = {}
+      templateFields = {},
+      brandGuidelines = ''
     } = body;
 
     if (!prompt) {
@@ -99,7 +100,12 @@ PROFESSIONAL PHOTOGRAPHY STANDARDS:
 
 Creative direction: ${prompt}
 
-FINAL REQUIREMENTS: The generated image must be immediately recognizable as the exact same product with identical branding, typography, and design elements. Focus enhancement ONLY on lighting, background, and camera positioning while preserving 100% product authenticity.`
+${brandGuidelines ? `BRAND GUIDELINES COMPLIANCE:
+${brandGuidelines}
+
+IMPORTANT: Ensure all visual elements strictly adhere to the brand guidelines above while maintaining the technical photography requirements.
+
+` : ''}FINAL REQUIREMENTS: The generated image must be immediately recognizable as the exact same product with identical branding, typography, and design elements. Focus enhancement ONLY on lighting, background, and camera positioning while preserving 100% product authenticity.`
       : `Create a hyper-realistic, studio-quality product photograph of a ${productSubject} positioned on a ${backgroundSurface}.
 
 PHOTOGRAPHY SETUP: The lighting is a ${lightingSetup} to ${lightingPurpose}. The camera angle is a ${cameraAngle} to showcase ${showcaseFeature}. Ultra-realistic studio photography, with sharp focus on ${focusDetail}. ${aspectRatio}.
@@ -113,7 +119,12 @@ PROFESSIONAL PHOTOGRAPHY STANDARDS:
 
 Creative direction: ${prompt}
 
-TECHNICAL SPECIFICATIONS: Professional commercial photography quality with sharp edge definition, accurate material representation, and studio-grade lighting execution.`;
+${brandGuidelines ? `BRAND GUIDELINES COMPLIANCE:
+${brandGuidelines}
+
+IMPORTANT: Ensure all visual elements strictly adhere to the brand guidelines above while maintaining the technical photography requirements.
+
+` : ''}TECHNICAL SPECIFICATIONS: Professional commercial photography quality with sharp edge definition, accurate material representation, and studio-grade lighting execution.`;
 
     // Generate multiple images (limit to 4 max for performance)
     const imageCount = Math.min(Math.max(count, 1), 4);
