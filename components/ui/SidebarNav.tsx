@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import { useSession, signOut } from "next-auth/react";
 import * as NavigationMenu from '@radix-ui/react-navigation-menu';
 import * as Separator from '@radix-ui/react-separator';
 import { 
@@ -12,7 +13,9 @@ import {
   X,
   Home,
   Settings,
-  FileText
+  FileText,
+  LogOut,
+  User
 } from "lucide-react";
 
 interface SidebarNavProps {
@@ -56,10 +59,15 @@ const navigationItems = [
     shortLabel: "Library"
   }
 ];export function SidebarNav({ activeTab, setActiveTab, isOpen, setIsOpen, isCollapsed, setIsCollapsed }: SidebarNavProps) {
+  const { data: session } = useSession();
   const [isHovered, setIsHovered] = React.useState(false);
   
   // Determine if sidebar should show expanded content
   const showExpanded = !isCollapsed || isHovered || isOpen;
+
+  const handleSignOut = () => {
+    signOut({ callbackUrl: '/auth/signin' });
+  };
   
   return (
     <>
@@ -162,6 +170,18 @@ const navigationItems = [
                   {showExpanded && <span className="font-medium whitespace-nowrap">Settings</span>}
                 </button>
               </NavigationMenu.Item>
+
+              {/* Logout */}
+              <NavigationMenu.Item>
+                <button
+                  onClick={handleSignOut}
+                  className={`w-full flex items-center gap-3 px-3 py-3 text-left rounded-lg transition-all duration-200 text-red-400 hover:bg-red-900/20 hover:text-red-300 ${!showExpanded ? 'justify-center' : ''}`}
+                  title={!showExpanded ? "Sign Out" : undefined}
+                >
+                  <LogOut className="h-5 w-5 flex-shrink-0" />
+                  {showExpanded && <span className="font-medium whitespace-nowrap">Sign Out</span>}
+                </button>
+              </NavigationMenu.Item>
             </NavigationMenu.List>
           </NavigationMenu.Root>
         </div>
@@ -169,6 +189,31 @@ const navigationItems = [
         {/* Footer */}
         {showExpanded && (
           <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-slate-800">
+            {session?.user && (
+              <div className="mb-3 flex items-center gap-2">
+                <div className="w-6 h-6 bg-blue-600 rounded-full flex items-center justify-center flex-shrink-0">
+                  {session.user.image ? (
+                    <img 
+                      src={session.user.image} 
+                      alt="Profile" 
+                      className="w-6 h-6 rounded-full"
+                    />
+                  ) : (
+                    <User className="h-3 w-3 text-white" />
+                  )}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs font-medium text-white truncate">
+                    {session.user.name || session.user.email}
+                  </p>
+                  {session.user.name && session.user.email && (
+                    <p className="text-xs text-slate-400 truncate">
+                      {session.user.email}
+                    </p>
+                  )}
+                </div>
+              </div>
+            )}
             <div className="text-center text-sm text-slate-400">
               Further AI Demo
             </div>

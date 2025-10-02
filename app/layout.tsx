@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 import { ProductProvider } from "@/contexts/ProductContext";
 import { BrandGuidelinesProvider } from "@/contexts/BrandGuidelinesContext";
+import AuthProvider from "@/components/AuthProvider";
 
 export const metadata: Metadata = {
   title: "Further X MK AI demo",
@@ -16,11 +17,13 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className="font-sans antialiased" style={{ fontFamily: 'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif' }}>
-        <BrandGuidelinesProvider>
-          <ProductProvider>
-            {children}
-          </ProductProvider>
-        </BrandGuidelinesProvider>
+        <AuthProvider>
+          <BrandGuidelinesProvider>
+            <ProductProvider>
+              {children}
+            </ProductProvider>
+          </BrandGuidelinesProvider>
+        </AuthProvider>
       </body>
     </html>
   );

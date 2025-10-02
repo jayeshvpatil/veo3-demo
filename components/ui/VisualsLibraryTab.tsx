@@ -7,24 +7,28 @@ interface SavedVisual {
   id: string;
   url: string;
   prompt: string;
+  type?: 'image' | 'video';
   product?: {
     id: string;
     title: string;
     description: string;
   };
   timestamp: number;
+  metadata?: any;
 }
 
 interface VisualsLibraryTabProps {
   savedVisuals: SavedVisual[];
   onDeleteVisual: (visualId: string) => void;
   onReuseVisual: (visual: SavedVisual) => void;
+  onClearAll?: () => void;
 }
 
 export default function VisualsLibraryTab({
   savedVisuals,
   onDeleteVisual,
-  onReuseVisual
+  onReuseVisual,
+  onClearAll
 }: VisualsLibraryTabProps) {
   const downloadVisual = async (visual: SavedVisual) => {
     try {
@@ -34,7 +38,7 @@ export default function VisualsLibraryTab({
       
       const a = document.createElement('a');
       a.href = url;
-      a.download = `visual-${visual.id}.png`;
+      a.download = `${visual.type === 'video' ? 'video' : 'visual'}-${visual.id}.${visual.type === 'video' ? 'mp4' : 'png'}`;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
@@ -67,38 +71,80 @@ export default function VisualsLibraryTab({
 
   return (
     <div className="h-full p-6 overflow-y-auto">
-      <div className="mb-6">
-        <h2 className="text-2xl font-bold mb-2">Visual Library</h2>
-        <p className="text-gray-600">
-          {savedVisuals.length} saved visual{savedVisuals.length !== 1 ? 's' : ''}
-        </p>
+      <div className="mb-6 flex justify-between items-start">
+        <div>
+          <h2 className="text-2xl font-bold mb-2">Visual Library</h2>
+          <p className="text-gray-600">
+            {savedVisuals.length} saved visual{savedVisuals.length !== 1 ? 's' : ''}
+          </p>
+        </div>
+        {savedVisuals.length > 0 && onClearAll && (
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={onClearAll}
+            className="text-red-600 border-red-600 hover:bg-red-50"
+          >
+            <Trash2 className="w-4 h-4 mr-2" />
+            Clear All
+          </Button>
+        )}
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {savedVisuals.map((visual) => (
           <div key={visual.id} className="bg-white rounded-lg border shadow-sm overflow-hidden">
-            {/* Visual Image */}
+            {/* Visual Media */}
             <div className="aspect-square bg-gray-100 relative overflow-hidden">
-              <img
-                src={visual.url}
-                alt="Generated visual"
-                className="w-full h-full object-cover"
-                onError={(e) => {
-                  const target = e.target as HTMLImageElement;
-                  target.style.display = 'none';
-                  const parent = target.parentElement;
-                  if (parent) {
-                    parent.innerHTML = `
-                      <div class="w-full h-full flex items-center justify-center text-gray-400">
-                        <div class="text-center">
-                          <div class="text-4xl mb-2">🖼️</div>
-                          <div class="text-sm">Image not available</div>
+              {visual.type === 'video' ? (
+                <video
+                  src={visual.url}
+                  className="w-full h-full object-cover"
+                  controls
+                  preload="metadata"
+                  onError={(e) => {
+                    const target = e.target as HTMLVideoElement;
+                    target.style.display = 'none';
+                    const parent = target.parentElement;
+                    if (parent) {
+                      parent.innerHTML = `
+                        <div class="w-full h-full flex items-center justify-center text-gray-400">
+                          <div class="text-center">
+                            <div class="text-4xl mb-2">🎬</div>
+                            <div class="text-sm">Video not available</div>
+                          </div>
                         </div>
-                      </div>
-                    `;
-                  }
-                }}
-              />
+                      `;
+                    }
+                  }}
+                />
+              ) : (
+                <img
+                  src={visual.url}
+                  alt="Generated visual"
+                  className="w-full h-full object-cover"
+                  onError={(e) => {
+                    const target = e.target as HTMLImageElement;
+                    target.style.display = 'none';
+                    const parent = target.parentElement;
+                    if (parent) {
+                      parent.innerHTML = `
+                        <div class="w-full h-full flex items-center justify-center text-gray-400">
+                          <div class="text-center">
+                            <div class="text-4xl mb-2">🖼️</div>
+                            <div class="text-sm">Image not available</div>
+                          </div>
+                        </div>
+                      `;
+                    }
+                  }}
+                />
+              )}
+              
+              {/* Media type indicator */}
+              <div className="absolute top-2 right-2 bg-black bg-opacity-60 text-white text-xs px-2 py-1 rounded">
+                {visual.type === 'video' ? '🎬 Video' : '🖼️ Image'}
+              </div>
             </div>
 
             {/* Visual Info */}

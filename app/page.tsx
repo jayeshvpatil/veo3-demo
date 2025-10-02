@@ -1,472 +1,476 @@
 "use client";
 
-import React, {
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from "react";
-import { SidebarNav, MobileMenuButton } from "@/components/ui/SidebarNav";
+import React, { useEffect, useState, useCallback } from "react";
+import { useSession } from "next-auth/react";
+import { useRouter } from "next/navigation";
+import { SidebarNav } from "@/components/ui/SidebarNav";
 import ProductSelectionTab from "@/components/ui/ProductSelectionTab";
 import PromptManagementTab from "@/components/ui/PromptManagementTab";
 import ReviewTab from "@/components/ui/ReviewTab";
 import VisualsLibraryTab from "@/components/ui/VisualsLibraryTab";
 import BrandGuidelines from "@/components/ui/BrandGuidelines";
-import { useBrandGuidelines } from "@/contexts/BrandGuidelinesContext";
-
-type VeoOperationName = string | null;
-
-const POLL_INTERVAL_MS = 5000;
+type SavedVisual = {
+  id: string;
+  url: string;
+  prompt: string;
+  type?: 'image' | 'video';
+  product?: {
+    id: string;
+    title: string;
+    description: string;
+  };
+  timestamp: number;
+  metadata?: any;
+};
 
 const VeoStudio: React.FC = () => {
-  const { getBrandPromptAdditions } = useBrandGuidelines();
-  const [prompt, setPrompt] = useState(""); // Video prompt
-  const [negativePrompt, setNegativePrompt] = useState("");
-  const [aspectRatio, setAspectRatio] = useState("16:9");
-  const [selectedModel, setSelectedModel] = useState(
-    "veo-2.0-generate-001" // More stable model with better quota availability
-  );
-
-  // Tab state management
-  const [activeTab, setActiveTab] = useState("products");
+  const { data: session, status } = useSession();
+  const router = useRouter();
   
-  // Sidebar state management
-  const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(true);
+  // State for sidebar
+  const [activeTab, setActiveTab] = useState("products");
+  const [isOpen, setIsOpen] = useState(false);
+  const [isCollapsed, setIsCollapsed] = useState(true);
 
-  // Saved visuals for library
-  const [savedVisuals, setSavedVisuals] = useState<Array<{
-    id: string;
-    url: string;
-    prompt: string;
-    product?: {
-      id: string;
-      title: string;
-      description: string;
-    };
-    timestamp: number;
-  }>>([]);
-
-  // New customization options
+  // Video generation state
+  const [prompt, setPrompt] = useState("");
+  const [selectedModel, setSelectedModel] = useState("veo-2.0-generate-001");
+  const [canStart, setCanStart] = useState(false);
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [showImageTools, setShowImageTools] = useState(false);
+  const [videoUrl, setVideoUrl] = useState<string | null>(null);
+  
+  // Image generation state
+  const [imagePrompt, setImagePrompt] = useState("");
+  const [imagenBusy, setImagenBusy] = useState(false);
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [generatedImage, setGeneratedImage] = useState<string | null>(null);
   const [visualStyle, setVisualStyle] = useState("");
   const [cameraAngle, setCameraAngle] = useState("");
-  const [description, setDescription] = useState("");
+  
+  // Saved visuals for library
+  const [savedVisuals, setSavedVisuals] = useState<SavedVisual[]>([]);
 
-  // Listen for product selection events
-  useEffect(() => {
-    const handleProductUpdate = (event: CustomEvent) => {
-      setPrompt(event.detail.prompt || "");
-      setDescription(event.detail.description || "");
+  // Load saved visuals from database
+  const loadSavedVisuals = useCallback(async () => {
+    try {
+      const response = await fetch('/api/visuals/list');
+      if (response.ok) {
+        const data = await response.json();
+        setSavedVisuals(data.visuals || []);
+      }
+    } catch (error) {
+      console.error('Error loading visuals:', error);
+    }
+  }, []);
+
+  // Save visual to database
+  const saveVisual = useCallback(async (visualData: {
+    prompt: string;
+    imageUrl?: string;
+    videoUrl?: string;
+    type: 'image' | 'video';
+    metadata?: any;
+  }) => {
+    try {
+      const response = await fetch('/api/visuals/save', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(visualData)
+      });
       
-      // If an image file is provided, set it and enable image tools
-      if (event.detail.imageFile) {
-        setImageFile(event.detail.imageFile);
-        setShowImageTools(true);
+      if (response.ok) {
+        const data = await response.json();
+        setSavedVisuals(prev => [data.visual, ...prev]);
+        console.log('Visual saved to library:', data.visual);
+        return data.visual;
       }
+    } catch (error) {
+      console.error('Error saving visual:', error);
+    }
+  }, []);
 
-      // Navigate to specified tab (for visual generation workflow)
-      if (event.detail.navigateToTab) {
-        setActiveTab(event.detail.navigateToTab);
-      }
-    };
+  // Load visuals when component mounts and user is authenticated
+  useEffect(() => {
+    if (session?.user) {
+      loadSavedVisuals();
+    }
+  }, [session, loadSavedVisuals]);
 
+  // Listen for saveVisual events from ProductContext
+  useEffect(() => {
     const handleSaveVisual = (event: CustomEvent) => {
-      const visual = event.detail;
-      setSavedVisuals(prev => [...prev, visual]);
+      const visualDetail = event.detail;
+      console.log('Received saveVisual event:', visualDetail);
+      
+      // Convert to the format expected by our saveVisual function
+      saveVisual({
+        prompt: visualDetail.prompt,
+        imageUrl: visualDetail.url,
+        type: 'image',
+        metadata: {
+          model: 'visual-generation',
+          productId: visualDetail.product?.id,
+          generatedAt: new Date(visualDetail.timestamp).toISOString()
+        }
+      });
     };
 
-    window.addEventListener('updateVideoPrompt', handleProductUpdate as EventListener);
     window.addEventListener('saveVisual', handleSaveVisual as EventListener);
     
     return () => {
-      window.removeEventListener('updateVideoPrompt', handleProductUpdate as EventListener);
       window.removeEventListener('saveVisual', handleSaveVisual as EventListener);
     };
+  }, [saveVisual]);
+
+  // Update canStart based on prompt
+  useEffect(() => {
+    setCanStart(prompt.trim().length > 0);
+  }, [prompt]);
+
+  const startGeneration = useCallback(async () => {
+    if (!canStart || isGenerating) return;
+    
+    setIsGenerating(true);
+    try {
+      console.log("Starting video generation with prompt:", prompt);
+      
+      // Create form data for the VEO API
+      const formData = new FormData();
+      formData.append('prompt', prompt);
+      formData.append('model', selectedModel);
+      formData.append('aspectRatio', '16:9');
+      
+      if (imageFile) {
+        formData.append('imageFile', imageFile);
+      }
+      
+      // Call the actual VEO generation API
+      const response = await fetch('/api/veo/generate', {
+        method: 'POST',
+        body: formData
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        console.log('VEO generation response:', data);
+        
+        // Check if we got an operation name for polling
+        if (data.operationName) {
+          // Poll for the operation result
+          const pollForResult = async (operationName: string) => {
+            try {
+              const pollResponse = await fetch('/api/veo/operation', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ operationName })
+              });
+              
+              if (pollResponse.ok) {
+                const pollData = await pollResponse.json();
+                
+                if (pollData.done && pollData.downloadUrl) {
+                  // Generation complete! Save to library
+                  setVideoUrl(pollData.downloadUrl);
+                  setIsGenerating(false);
+                  
+                  await saveVisual({
+                    prompt,
+                    videoUrl: pollData.downloadUrl,
+                    type: 'video',
+                    metadata: {
+                      model: selectedModel,
+                      visualStyle,
+                      cameraAngle,
+                      operationName,
+                      generatedAt: new Date().toISOString()
+                    }
+                  });
+                  
+                  console.log("Video generated and saved to library");
+                } else if (!pollData.done) {
+                  // Still processing, poll again in 5 seconds
+                  setTimeout(() => pollForResult(operationName), 5000);
+                } else if (pollData.error) {
+                  console.error('Generation failed:', pollData.error);
+                  setIsGenerating(false);
+                }
+              }
+            } catch (pollError) {
+              console.error('Error polling for result:', pollError);
+              setIsGenerating(false);
+            }
+          };
+          
+          // Start polling
+          setTimeout(() => pollForResult(data.operationName), 5000);
+          
+        } else if (data.error) {
+          console.error('Generation error:', data.error);
+          setIsGenerating(false);
+        }
+      } else {
+        console.error('Failed to start generation');
+        setIsGenerating(false);
+      }
+      
+    } catch (error) {
+      console.error("Error generating video:", error);
+      setIsGenerating(false);
+    }
+  }, [canStart, isGenerating, prompt, selectedModel, visualStyle, cameraAngle, imageFile, saveVisual]);
+
+  const onPickImage = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setImageFile(file);
+    }
   }, []);
 
-  // Imagen-specific prompt
-  const [imagePrompt, setImagePrompt] = useState("");
+  const generateWithImagen = useCallback(async () => {
+    if (!imagePrompt.trim() || imagenBusy) return;
+    
+    setImagenBusy(true);
+    try {
+      console.log("Generating image with prompt:", imagePrompt);
+      
+      // Call the real Imagen generation API
+      const response = await fetch('/api/imagen/generate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          prompt: imagePrompt,
+          count: 1
+        })
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        console.log('Imagen generation response:', data);
+        
+        if (data.image && data.image.imageBytes) {
+          // Convert base64 to data URL
+          const imageBase64 = data.image.imageBytes;
+          const mimeType = data.image.mimeType || 'image/png';
+          const dataUrl = `data:${mimeType};base64,${imageBase64}`;
+          setGeneratedImage(dataUrl);
+          
+          // Save to the visuals API to get a proper URL
+          const saveResponse = await fetch('/api/visuals/serve', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              imageData: imageBase64,
+              mimeType: mimeType
+            })
+          });
+          
+          if (saveResponse.ok) {
+            const saveData = await saveResponse.json();
+            const imageUrl = `/api/visuals/serve?id=${saveData.imageId}`;
+            
+            // Save to library
+            await saveVisual({
+              prompt: imagePrompt,
+              imageUrl: imageUrl,
+              type: 'image',
+              metadata: {
+                model: 'imagen-3.0',
+                visualStyle,
+                generatedAt: new Date().toISOString()
+              }
+            });
+            
+            console.log("Image generated and saved to library");
+          }
+        }
+        
+        setImagenBusy(false);
+      } else {
+        console.error('Failed to generate image');
+        setImagenBusy(false);
+      }
+    } catch (error) {
+      console.error("Error generating image:", error);
+      setImagenBusy(false);
+    }
+  }, [imagePrompt, imagenBusy, visualStyle, saveVisual]);
 
-  const [imageFile, setImageFile] = useState<File | null>(null);
-  const [imagenBusy, setImagenBusy] = useState(false);
-  const [generatedImage, setGeneratedImage] = useState<string | null>(null); // data URL
-
-  const [operationName, setOperationName] = useState<VeoOperationName>(null);
-  const [isGenerating, setIsGenerating] = useState(false);
-  const [videoUrl, setVideoUrl] = useState<string | null>(null);
-  const videoBlobRef = useRef<Blob | null>(null);
-  const trimmedBlobRef = useRef<Blob | null>(null);
-  const trimmedUrlRef = useRef<string | null>(null);
-  const originalVideoUrlRef = useRef<string | null>(null);
-
-  const [showImageTools, setShowImageTools] = useState(false);
-
-  // Image input ref
-  const imageInputRef = useRef<HTMLInputElement>(null);
-
-  const canStart = useMemo(() => {
-    if (!prompt || !prompt.trim()) return false;
-    if (showImageTools && !(imageFile || generatedImage)) return false;
-    return true;
-  }, [prompt, showImageTools, imageFile, generatedImage]);
-
-  const resetAll = () => {
+  const resetAll = useCallback(() => {
     setPrompt("");
-    setNegativePrompt("");
-    setAspectRatio("16:9");
-    setVisualStyle("");
-    setCameraAngle("");
-    setDescription("");
     setImagePrompt("");
     setImageFile(null);
     setGeneratedImage(null);
-    setOperationName(null);
-    setIsGenerating(false);
+    setVisualStyle("");
+    setCameraAngle("");
     setVideoUrl(null);
-    if (videoBlobRef.current) {
-      URL.revokeObjectURL(URL.createObjectURL(videoBlobRef.current));
-      videoBlobRef.current = null;
-    }
-    if (trimmedUrlRef.current) {
-      URL.revokeObjectURL(trimmedUrlRef.current);
-      trimmedUrlRef.current = null;
-    }
-    trimmedBlobRef.current = null;
-  };
+    setShowImageTools(false);
+  }, []);
 
-  // Imagen helper
-  const generateWithImagen = useCallback(async () => {
-    setImagenBusy(true);
-    setGeneratedImage(null);
+  const handleDeleteVisual = useCallback(async (visualId: string) => {
     try {
-      const resp = await fetch("/api/imagen/generate", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ prompt: imagePrompt }),
+      const response = await fetch(`/api/visuals/save?id=${visualId}`, {
+        method: 'DELETE'
       });
-      const json = await resp.json();
-      if (json?.image?.imageBytes) {
-        const dataUrl = `data:${json.image.mimeType};base64,${json.image.imageBytes}`;
-        setGeneratedImage(dataUrl);
+      
+      if (response.ok) {
+        setSavedVisuals(prev => prev.filter(visual => visual.id !== visualId));
       }
-    } catch (e) {
-      console.error(e);
-    } finally {
-      setImagenBusy(false);
+    } catch (error) {
+      console.error('Error deleting visual:', error);
     }
-  }, [imagePrompt]);
+  }, []);
 
-  // Build complete prompt with customizations
-  const buildCompletePrompt = useCallback(() => {
-    let completePrompt = prompt;
-    
-    // Add visual style
-    if (visualStyle) {
-      completePrompt = `${visualStyle} style: ${completePrompt}`;
+  const handleClearAll = useCallback(async () => {
+    if (!confirm('Are you sure you want to delete all visuals? This action cannot be undone.')) {
+      return;
     }
     
-    // Add camera angle
-    if (cameraAngle) {
-      completePrompt = `${completePrompt}. Shot with ${cameraAngle} camera angle`;
-    }
-    
-    // Add brand guidelines
-    const brandGuidelines = getBrandPromptAdditions();
-    if (brandGuidelines) {
-      completePrompt = `${completePrompt}\n\n${brandGuidelines}`;
-    }
-    
-    // DO NOT add product description to video prompts - videos should be based on the image content
-    // Product descriptions are static and don't add value to video generation
-    
-    return completePrompt;
-  }, [prompt, visualStyle, cameraAngle, getBrandPromptAdditions]);
-
-  // Start Veo job
-  const startGeneration = useCallback(async () => {
-    if (!canStart) return;
-    setIsGenerating(true);
-    setVideoUrl(null);
-
-    // Switch to review tab immediately when generation starts
-    setActiveTab("review");
-
-    const completePrompt = buildCompletePrompt();
-    
-    const form = new FormData();
-    form.append("prompt", completePrompt);
-    form.append("model", selectedModel);
-    if (negativePrompt) form.append("negativePrompt", negativePrompt);
-    if (aspectRatio) form.append("aspectRatio", aspectRatio);
-
-    if (showImageTools) {
-      if (imageFile) {
-        form.append("imageFile", imageFile);
-      } else if (generatedImage) {
-        const [meta, b64] = generatedImage.split(",");
-        const mime = meta?.split(";")?.[0]?.replace("data:", "") || "image/png";
-        form.append("imageBase64", b64);
-        form.append("imageMimeType", mime);
-      }
-    }
-
     try {
-      const resp = await fetch("/api/veo/generate", {
-        method: "POST",
-        body: form,
+      const response = await fetch('/api/visuals/clear', {
+        method: 'DELETE'
       });
-      const json = await resp.json();
       
-      if (!resp.ok) {
-        // Handle specific error types from the API
-        let errorMessage = json.error || "Failed to start video generation";
-        
-        if (json.type === "quota_exceeded") {
-          errorMessage = `API quota exceeded. This usually means:
-• Daily/hourly API limits reached
-• Billing account needs to be set up  
-• Try again in a few hours
-
-Check your Google Cloud Console for quota details.`;
-        } else if (json.type === "permission_denied") {
-          errorMessage = "Permission denied. Please check your API key and project settings.";
-        } else if (json.type === "invalid_argument") {
-          errorMessage = "Invalid request. Please check your inputs and try again.";
-        }
-        
-        alert(errorMessage);
-        setIsGenerating(false);
-        return;
+      if (response.ok) {
+        setSavedVisuals([]);
       }
-      
-      setOperationName(json?.name || null);
-    } catch (e) {
-      console.error(e);
-      alert("Network error occurred. Please check your connection and try again.");
-      setIsGenerating(false);
+    } catch (error) {
+      console.error('Error clearing all visuals:', error);
     }
-  }, [
-    canStart,
-    buildCompletePrompt,
-    selectedModel,
-    negativePrompt,
-    aspectRatio,
-    showImageTools,
-    imageFile,
-    generatedImage,
-    setActiveTab,
-  ]);
+  }, []);
 
-  // Poll operation until done then download
-  useEffect(() => {
-    let timer: ReturnType<typeof setTimeout> | undefined;
-    async function poll() {
-      if (!operationName || videoUrl) return;
-      try {
-        const resp = await fetch("/api/veo/operation", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ name: operationName }),
-        });
-        const fresh = await resp.json();
-        if (fresh?.done) {
-          const fileUri = fresh?.response?.generatedVideos?.[0]?.video?.uri;
-          if (fileUri) {
-            const dl = await fetch("/api/veo/download", {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ uri: fileUri }),
-            });
-            const blob = await dl.blob();
-            videoBlobRef.current = blob;
-            const url = URL.createObjectURL(blob);
-            setVideoUrl(url);
-            originalVideoUrlRef.current = url;
-          }
-          setIsGenerating(false);
-          return;
-        }
-      } catch (e) {
-        console.error(e);
-        setIsGenerating(false);
-      } finally {
-        timer = setTimeout(poll, POLL_INTERVAL_MS);
-      }
-    }
-    if (operationName && !videoUrl) {
-      timer = setTimeout(poll, POLL_INTERVAL_MS);
-    }
-    return () => {
-      if (timer) clearTimeout(timer);
-    };
-  }, [operationName, videoUrl]);
+  const handleReuseVisual = useCallback((visual: SavedVisual) => {
+    setPrompt(visual.prompt);
+    setActiveTab("prompt"); // Switch to prompt tab
+  }, []);
 
-  const onPickImage = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const f = e.target.files?.[0];
-    if (f) {
-      setImageFile(f);
-      setGeneratedImage(null);
-    }
-  };
-
-  const handleTrimmedOutput = (blob: Blob) => {
-    trimmedBlobRef.current = blob; // likely webm
-    if (trimmedUrlRef.current) {
-      URL.revokeObjectURL(trimmedUrlRef.current);
-    }
-    trimmedUrlRef.current = URL.createObjectURL(blob);
-    setVideoUrl(trimmedUrlRef.current);
-  };
-
-  const handleResetTrimState = () => {
-    if (trimmedUrlRef.current) {
-      URL.revokeObjectURL(trimmedUrlRef.current);
-      trimmedUrlRef.current = null;
-    }
-    trimmedBlobRef.current = null;
-    if (originalVideoUrlRef.current) {
-      setVideoUrl(originalVideoUrlRef.current);
-    }
-  };
-
-  const downloadVideo = async () => {
-    const blob = trimmedBlobRef.current || videoBlobRef.current;
-    if (!blob) return;
-    const isTrimmed = !!trimmedBlobRef.current;
-    const filename = isTrimmed ? "veo3_video_trimmed.webm" : "veo3_video.mp4";
+  const handleOutputChanged = useCallback((blob: Blob) => {
+    // Handle video output changes
     const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.style.display = "none";
-    link.href = url;
-    link.setAttribute("download", filename);
-    link.setAttribute("rel", "noopener");
-    link.target = "_self";
-    document.body.appendChild(link);
-    link.click();
-    setTimeout(() => {
-      document.body.removeChild(link);
-      URL.revokeObjectURL(url);
-    }, 0);
+    setVideoUrl(url);
+  }, []);
+
+  const handleDownload = useCallback(() => {
+    if (videoUrl) {
+      const a = document.createElement('a');
+      a.href = videoUrl;
+      a.download = 'generated-video.mp4';
+      a.click();
+    }
+  }, [videoUrl]);
+
+  const handleResetTrim = useCallback(() => {
+    // Reset trim functionality
+    console.log("Reset trim");
+  }, []);
+
+  // Redirect to sign-in if not authenticated
+  useEffect(() => {
+    if (status === "unauthenticated") {
+      router.push("/auth/signin");
+    }
+  }, [status, router]);
+
+  // Show loading while checking authentication
+  if (status === "loading") {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-900 via-purple-900 to-violet-800">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white mx-auto"></div>
+          <p className="mt-4 text-white">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Don't render anything if not authenticated (will redirect)
+  if (!session) {
+    return null;
+  }
+
+  // Render the appropriate tab content
+  const renderTabContent = () => {
+    switch (activeTab) {
+      case "products":
+        return <ProductSelectionTab />;
+      case "brand-guidelines":
+        return <BrandGuidelines />;
+      case "prompt":
+        return (
+          <PromptManagementTab
+            prompt={prompt}
+            setPrompt={setPrompt}
+            selectedModel={selectedModel}
+            setSelectedModel={setSelectedModel}
+            canStart={canStart}
+            isGenerating={isGenerating}
+            startGeneration={startGeneration}
+            showImageTools={showImageTools}
+            setShowImageTools={setShowImageTools}
+            imagePrompt={imagePrompt}
+            setImagePrompt={setImagePrompt}
+            imagenBusy={imagenBusy}
+            onPickImage={onPickImage}
+            generateWithImagen={generateWithImagen}
+            imageFile={imageFile}
+            generatedImage={generatedImage}
+            resetAll={resetAll}
+            visualStyle={visualStyle}
+            setVisualStyle={setVisualStyle}
+            cameraAngle={cameraAngle}
+            setCameraAngle={setCameraAngle}
+          />
+        );
+      case "review":
+        return (
+          <ReviewTab
+            videoUrl={videoUrl}
+            isGenerating={isGenerating}
+            onOutputChanged={handleOutputChanged}
+            onDownload={handleDownload}
+            onResetTrim={handleResetTrim}
+            prompt={prompt}
+          />
+        );
+      case "library":
+        return (
+          <VisualsLibraryTab
+            savedVisuals={savedVisuals}
+            onDeleteVisual={handleDeleteVisual}
+            onReuseVisual={handleReuseVisual}
+            onClearAll={handleClearAll}
+          />
+        );
+      default:
+        return (
+          <div className="h-full flex items-center justify-center">
+            <div className="text-center text-white">
+              <h1 className="text-4xl font-bold mb-4">Welcome to VEO Studio</h1>
+              <p className="text-xl text-gray-300">
+                Hello, {session.user?.name || session.user?.email}!
+              </p>
+              <p className="text-lg text-gray-400 mt-2">
+                Select a tab from the sidebar to get started.
+              </p>
+            </div>
+          </div>
+        );
+    }
   };
 
   return (
-    <div className="h-screen bg-slate-900 flex">
-      {/* Sidebar Navigation */}
+    <div className="flex h-screen bg-gradient-to-br from-gray-900 via-purple-900 to-violet-800">
       <SidebarNav 
-        activeTab={activeTab} 
+        activeTab={activeTab}
         setActiveTab={setActiveTab}
-        isOpen={sidebarOpen}
-        setIsOpen={setSidebarOpen}
-        isCollapsed={sidebarCollapsed}
-        setIsCollapsed={setSidebarCollapsed}
+        isOpen={isOpen}
+        setIsOpen={setIsOpen}
+        isCollapsed={isCollapsed}
+        setIsCollapsed={setIsCollapsed}
       />
-
-      {/* Main Content Area */}
-      <div className="flex-1 flex flex-col lg:ml-0">
-        {/* Header */}
-        <header className="bg-slate-900 border-b border-slate-800">
-          <div className="px-4 lg:px-8 py-4 lg:py-6">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-4">
-                <MobileMenuButton onClick={() => setSidebarOpen(true)} />
-                <div>
-                  <h1 className="text-xl lg:text-2xl font-semibold text-white">
-                    Product Feeds
-                  </h1>
-                  <p className="text-sm text-slate-400 mt-1">
-                    Manage your product feeds and generate creative content
-                  </p>
-                </div>
-              </div>
-              <button className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition-colors">
-                New Feed
-              </button>
-            </div>
-          </div>
-        </header>
-
-        {/* Content Area */}
-        <main className="flex-1 overflow-hidden bg-slate-900">
-          {activeTab === "products" && (
-            <div className="h-full overflow-y-auto">
-              <ProductSelectionTab />
-            </div>
-          )}
-          
-          {activeTab === "brand-guidelines" && (
-            <div className="h-full overflow-hidden">
-              <BrandGuidelines />
-            </div>
-          )}
-          
-          {activeTab === "prompt" && (
-            <div className="h-full overflow-hidden">
-              <PromptManagementTab
-                prompt={prompt}
-                setPrompt={setPrompt}
-                selectedModel={selectedModel}
-                setSelectedModel={setSelectedModel}
-                canStart={canStart}
-                isGenerating={isGenerating}
-                startGeneration={startGeneration}
-                showImageTools={showImageTools}
-                setShowImageTools={setShowImageTools}
-                imagePrompt={imagePrompt}
-                setImagePrompt={setImagePrompt}
-                imagenBusy={imagenBusy}
-                onPickImage={onPickImage}
-                generateWithImagen={generateWithImagen}
-                imageFile={imageFile}
-                generatedImage={generatedImage}
-                resetAll={resetAll}
-                visualStyle={visualStyle}
-                setVisualStyle={setVisualStyle}
-                cameraAngle={cameraAngle}
-                setCameraAngle={setCameraAngle}
-              />
-            </div>
-          )}
-          
-          {activeTab === "review" && (
-            <div className="h-full">
-              <ReviewTab
-                videoUrl={videoUrl}
-                isGenerating={isGenerating}
-                onOutputChanged={handleTrimmedOutput}
-                onDownload={downloadVideo}
-                onResetTrim={handleResetTrimState}
-                prompt={buildCompletePrompt()}
-              />
-            </div>
-          )}
-          
-          {activeTab === "library" && (
-            <div className="h-full">
-              <VisualsLibraryTab
-                savedVisuals={savedVisuals}
-                onDeleteVisual={(visualId) => {
-                  setSavedVisuals(prev => prev.filter(v => v.id !== visualId));
-                }}
-                onReuseVisual={(visual) => {
-                  // Switch to prompt tab and set the prompt
-                  setPrompt(visual.prompt);
-                  setActiveTab("prompt");
-                }}
-              />
-            </div>
-          )}
-        </main>
-      </div>
-
-      {/* Hidden file input */}
-      <input
-        type="file"
-        ref={imageInputRef}
-        accept="image/*"
-        style={{ display: "none" }}
-        onChange={onPickImage}
-      />
+      <main className="flex-1 overflow-hidden">
+        {renderTabContent()}
+      </main>
     </div>
   );
 };
