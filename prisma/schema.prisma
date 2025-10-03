@@ -97,16 +97,16 @@ model Visual {
   id        String   @id @default(cuid())
   userId    String
   projectId String?
-  prompt    String   @db.Text
-  imageUrl  String?  @db.Text
-  videoUrl  String?  @db.Text
+  prompt    String
+  imageUrl  String?
+  videoUrl  String?
   type      String   // 'image' or 'video'
   status    String   @default("pending") // 'pending', 'completed', 'failed'
-  metadata  String?  @db.Text // JSON string for additional data
+  metadata  String?  // JSON string for additional data
   tags      String?  // Comma-separated tags
   aiTags    String?  // AI-generated tags (comma-separated)
-  aiDescription String? @db.Text // AI-generated description for search
-  embedding String?  @db.Text // Vector embedding for similarity search (JSON array)
+  aiDescription String? // AI-generated description for search
+  embedding String?  // Vector embedding for similarity search (JSON array)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -119,8 +119,8 @@ model Project {
   id          String   @id @default(cuid())
   userId      String
   name        String
-  description String?  @db.Text
-  thumbnail   String?  @db.Text // URL to a representative image (can be data URL)
+  description String?
+  thumbnail   String?  // URL to a representative image
   color       String?  // Hex color for project theming
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
