@@ -313,9 +313,11 @@ This project is licensed under the Apache License 2.0. See the [LICENSE](LICENSE
 ## 🙋‍♂️ Support
 
 - **Issues**: [Open an issue](https://github.com/jayeshvpatil/veo3-demo/issues) for bug reports or feature requests
-- **Documentation**: Check the additional docs in the repository:
-  - `DEPLOYMENT.md` - Detailed deployment guide
-  - `FIXES.md` - Technical issues and solutions
+- **Documentation**: 
+  - 📚 [Documentation Index](./docs/INDEX.md) - Complete documentation guide
+  - 🚀 [Deployment Guide](./DEPLOYMENT.md) - Detailed deployment instructions
+  - ✨ [Features](./docs/features/) - Feature implementation docs
+  - 🐛 [Bug Fixes](./docs/fixes/) - Bug fix documentation
 
 ---
 
