@@ -118,7 +118,7 @@ const navigationItems = [
                 <Home className="h-5 w-5 text-white" />
               </div>
               {showExpanded && (
-                <h2 className="text-lg font-semibold text-white whitespace-nowrap">Further X MK AI Demo</h2>
+                <h2 className="text-lg font-semibold text-white whitespace-nowrap">Creative Studio</h2>
               )}
             </div>
             {showExpanded && (

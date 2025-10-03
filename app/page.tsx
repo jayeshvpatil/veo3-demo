@@ -524,7 +524,7 @@ const VeoStudio: React.FC = () => {
         return (
           <div className="h-full flex items-center justify-center">
             <div className="text-center text-white">
-              <h1 className="text-4xl font-bold mb-4">Welcome to VEO Studio</h1>
+              <h1 className="text-4xl font-bold mb-4">Welcome to Creative Studio</h1>
               <p className="text-xl text-gray-300">
                 Hello, {session.user?.name || session.user?.email}!
               </p>

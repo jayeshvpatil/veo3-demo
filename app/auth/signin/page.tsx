@@ -50,7 +50,7 @@ export default function SignIn() {
             <span className="text-white font-bold text-2xl">V</span>
           </div>
           <h2 className="text-3xl font-bold text-white">
-            Welcome to VEO Studio
+            Welcome to Creative Studio
           </h2>
           <p className="mt-2 text-sm text-slate-400">
             Sign in to your account to continue

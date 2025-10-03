@@ -1,6 +1,8 @@
 "use client";
 import React, { useState, useEffect } from 'react';
-import { Plus, Folder, Image, Video, Clock, MoreVertical, Edit, Trash2, Eye } from 'lucide-react';
+import * as AlertDialog from '@radix-ui/react-alert-dialog';
+import * as Tooltip from '@radix-ui/react-tooltip';
+import { Plus, Folder, Image, Clock, Trash2, Eye } from 'lucide-react';
 
 interface Project {
   id: string;
@@ -34,6 +36,7 @@ export default function ProjectsListTab({
   const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
   const [sortBy, setSortBy] = useState<'recent' | 'name' | 'visuals'>('recent');
+  const [projectToDelete, setProjectToDelete] = useState<string | null>(null);
 
   useEffect(() => {
     loadProjects();
@@ -55,21 +58,24 @@ export default function ProjectsListTab({
 
   const handleDeleteProject = async (projectId: string, e: React.MouseEvent) => {
     e.stopPropagation();
-    
-    if (!confirm('Are you sure you want to delete this project? This will also delete all collections and visuals in this project.')) {
-      return;
-    }
+    setProjectToDelete(projectId);
+  };
+
+  const confirmDelete = async () => {
+    if (!projectToDelete) return;
 
     try {
-      const response = await fetch(`/api/projects/${projectId}`, {
+      const response = await fetch(`/api/projects/${projectToDelete}`, {
         method: 'DELETE'
       });
 
       if (response.ok) {
-        setProjects(prev => prev.filter(p => p.id !== projectId));
+        setProjects(prev => prev.filter(p => p.id !== projectToDelete));
       }
     } catch (error) {
       console.error('Error deleting project:', error);
+    } finally {
+      setProjectToDelete(null);
     }
   };
 
@@ -113,7 +119,8 @@ export default function ProjectsListTab({
   }
 
   return (
-    <div className="p-8 space-y-6 max-w-7xl mx-auto">
+    <Tooltip.Provider>
+      <div className="p-8 space-y-6 max-w-7xl mx-auto">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
@@ -211,13 +218,25 @@ export default function ProjectsListTab({
                     </p>
                   )}
                 </div>
-                <button
-                  onClick={(e) => handleDeleteProject(project.id, e)}
-                  className="opacity-0 group-hover:opacity-100 p-2 hover:bg-red-900/20 rounded-lg transition-all text-gray-400 hover:text-red-400"
-                  title="Delete project"
-                >
-                  <Trash2 className="w-4 h-4" />
-                </button>
+                <Tooltip.Root>
+                  <Tooltip.Trigger asChild>
+                    <button
+                      onClick={(e) => handleDeleteProject(project.id, e)}
+                      className="opacity-0 group-hover:opacity-100 p-2 hover:bg-red-900/20 rounded-lg transition-all text-gray-400 hover:text-red-400"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </Tooltip.Trigger>
+                  <Tooltip.Portal>
+                    <Tooltip.Content
+                      className="bg-gray-900 text-white px-3 py-2 rounded-lg text-sm shadow-xl z-50"
+                      sideOffset={5}
+                    >
+                      Delete project
+                      <Tooltip.Arrow className="fill-gray-900" />
+                    </Tooltip.Content>
+                  </Tooltip.Portal>
+                </Tooltip.Root>
               </div>
 
               {/* Project Stats */}
@@ -273,6 +292,37 @@ export default function ProjectsListTab({
           ))}
         </div>
       )}
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog.Root open={!!projectToDelete} onOpenChange={(open) => !open && setProjectToDelete(null)}>
+        <AlertDialog.Portal>
+          <AlertDialog.Overlay className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0" />
+          <AlertDialog.Content className="fixed left-[50%] top-[50%] z-50 w-full max-w-md translate-x-[-50%] translate-y-[-50%] bg-gray-800 rounded-lg p-6 shadow-xl data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[state=closed]:slide-out-to-left-1/2 data-[state=closed]:slide-out-to-top-[48%] data-[state=open]:slide-in-from-left-1/2 data-[state=open]:slide-in-from-top-[48%]">
+            <AlertDialog.Title className="text-xl font-semibold text-white mb-2">
+              Delete Project
+            </AlertDialog.Title>
+            <AlertDialog.Description className="text-gray-400 mb-6">
+              Are you sure you want to delete this project? This will also delete all collections and visuals in this project. This action cannot be undone.
+            </AlertDialog.Description>
+            <div className="flex gap-3 justify-end">
+              <AlertDialog.Cancel asChild>
+                <button className="bg-gray-700 hover:bg-gray-600 text-white px-4 py-2 rounded-lg transition-colors">
+                  Cancel
+                </button>
+              </AlertDialog.Cancel>
+              <AlertDialog.Action asChild>
+                <button
+                  onClick={confirmDelete}
+                  className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg transition-colors"
+                >
+                  Delete Project
+                </button>
+              </AlertDialog.Action>
+            </div>
+          </AlertDialog.Content>
+        </AlertDialog.Portal>
+      </AlertDialog.Root>
     </div>
+    </Tooltip.Provider>
   );
 }

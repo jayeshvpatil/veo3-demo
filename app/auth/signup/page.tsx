@@ -78,7 +78,7 @@ export default function SignUp() {
             Create your account
           </h2>
           <p className="mt-2 text-sm text-slate-400">
-            Join VEO Studio to start creating amazing videos
+            Join Creative Studio to start creating amazing videos
           </p>
         </div>
 

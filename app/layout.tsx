@@ -5,7 +5,7 @@ import { BrandGuidelinesProvider } from "@/contexts/BrandGuidelinesContext";
 import AuthProvider from "@/components/AuthProvider";
 
 export const metadata: Metadata = {
-  title: "Further X MK AI demo",
+  title: "Further AI - AI-Powered Product Visuals",
   description: "Created By Further AI Team",
 };
 

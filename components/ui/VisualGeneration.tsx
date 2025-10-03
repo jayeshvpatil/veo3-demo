@@ -16,7 +16,8 @@ interface GeneratedVisual {
   data: string;
   mimeType: string;
   description?: string;
-  imageUrl?: string; // Add URL field for server-served images
+  imageUrl?: string; // Server URL or data URL
+  dataUrl?: string; // Fallback data URL
 }
 
 const visualStyles = [
@@ -200,6 +201,10 @@ export default function VisualGeneration({ productName, productDescription, prod
         const imagesWithUrls = await Promise.all(
           data.images.map(async (img: { data: string; mimeType: string }) => {
             try {
+              // Convert base64 to data URL for immediate display
+              const dataUrl = `data:${img.mimeType};base64,${img.data}`;
+              
+              // Also store on server for serving
               const storeResponse = await fetch('/api/visuals/serve', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -213,14 +218,15 @@ export default function VisualGeneration({ productName, productDescription, prod
                 const { imageId } = await storeResponse.json();
                 const imageUrl = `/api/visuals/serve?id=${imageId}`;
                 console.log('✅ Image stored with URL:', imageUrl);
-                return { ...img, imageUrl };
+                return { ...img, imageUrl, dataUrl };
               } else {
-                console.error('Failed to store image on server');
-                return img;
+                console.warn('Failed to store image on server, using data URL');
+                return { ...img, imageUrl: dataUrl, dataUrl };
               }
             } catch (error) {
               console.error('Error storing image:', error);
-              return img;
+              const dataUrl = `data:${img.mimeType};base64,${img.data}`;
+              return { ...img, imageUrl: dataUrl, dataUrl };
             }
           })
         );
@@ -228,15 +234,20 @@ export default function VisualGeneration({ productName, productDescription, prod
         setGeneratedVisuals(imagesWithUrls);
         setDescription(data.description || '');
         
-        // Save visuals to library
+        // Save visuals to library - only save if we have a valid imageUrl
         imagesWithUrls.forEach((visual, index) => {
-          const visualId = `visual-${Date.now()}-${index}`;
-          saveVisualToLibrary({
-            id: visualId,
-            url: visual.imageUrl || '', // Use server URL if available
-            prompt: prompt.trim(),
-            timestamp: Date.now()
-          });
+          if (visual.imageUrl) {
+            const visualId = `visual-${Date.now()}-${index}`;
+            console.log('Saving visual to library with URL:', visual.imageUrl);
+            saveVisualToLibrary({
+              id: visualId,
+              url: visual.imageUrl,
+              prompt: prompt.trim(),
+              timestamp: Date.now()
+            });
+          } else {
+            console.warn('Skipping visual save - no imageUrl available:', visual);
+          }
         });
         
         // Auto-scroll to the generated visuals after a short delay

@@ -119,7 +119,7 @@ export default function HomeTab({
     <div className="p-8 space-y-8 max-w-7xl mx-auto">
       {/* Header */}
       <div className="text-center space-y-4">
-        <h1 className="text-4xl font-bold text-white">Welcome to VEO Studio</h1>
+        <h1 className="text-4xl font-bold text-white">Welcome to Creative Studio</h1>
         <p className="text-xl text-gray-300">
           Create, organize, and manage your visual content projects
         </p>
