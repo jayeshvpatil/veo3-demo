@@ -9,6 +9,11 @@ import PromptManagementTab from "@/components/ui/PromptManagementTab";
 import ReviewTab from "@/components/ui/ReviewTab";
 import VisualsLibraryTab from "@/components/ui/VisualsLibraryTab";
 import BrandGuidelines from "@/components/ui/BrandGuidelines";
+import HomeTab from "@/components/ui/HomeTab";
+import ProjectsListTab from "@/components/ui/ProjectsListTab";
+import CollectionsListTab from "@/components/ui/CollectionsListTab";
+import CreateProjectModal from "@/components/ui/CreateProjectModal";
+import CreateCollectionModal from "@/components/ui/CreateCollectionModal";
 type SavedVisual = {
   id: string;
   url: string;
@@ -28,9 +33,15 @@ const VeoStudio: React.FC = () => {
   const router = useRouter();
   
   // State for sidebar
-  const [activeTab, setActiveTab] = useState("products");
+  const [activeTab, setActiveTab] = useState("home");
   const [isOpen, setIsOpen] = useState(false);
-  const [isCollapsed, setIsCollapsed] = useState(true);
+  const [isCollapsed, setIsCollapsed] = useState(false);
+  
+  // Project and collection modal states
+  const [showCreateProjectModal, setShowCreateProjectModal] = useState(false);
+  const [showCreateCollectionModal, setShowCreateCollectionModal] = useState(false);
+  const [selectedProjectForCollection, setSelectedProjectForCollection] = useState<{ id: string; name: string } | null>(null);
+  const [currentProject, setCurrentProject] = useState<string | null>(null);
 
   // Video generation state
   const [prompt, setPrompt] = useState("");
@@ -71,12 +82,16 @@ const VeoStudio: React.FC = () => {
     videoUrl?: string;
     type: 'image' | 'video';
     metadata?: any;
+    projectId?: string;
   }) => {
     try {
       const response = await fetch('/api/visuals/save', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(visualData)
+        body: JSON.stringify({
+          ...visualData,
+          projectId: visualData.projectId || currentProject
+        })
       });
       
       if (response.ok) {
@@ -88,7 +103,7 @@ const VeoStudio: React.FC = () => {
     } catch (error) {
       console.error('Error saving visual:', error);
     }
-  }, []);
+  }, [currentProject]);
 
   // Load visuals when component mounts and user is authenticated
   useEffect(() => {
@@ -364,6 +379,46 @@ const VeoStudio: React.FC = () => {
     console.log("Reset trim");
   }, []);
 
+  // Project and collection handlers
+  const handleCreateProject = useCallback(async (data: { name: string; description: string; color: string }) => {
+    try {
+      const response = await fetch('/api/projects', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        console.log('Project created:', result.project);
+        // Navigate to the new project
+        setActiveTab(`project-${result.project.id}`);
+        setCurrentProject(result.project.id);
+      }
+    } catch (error) {
+      console.error('Error creating project:', error);
+    }
+  }, []);
+
+  const handleCreateCollection = useCallback(async (data: { name: string; description: string; color: string; projectId: string }) => {
+    try {
+      const response = await fetch('/api/collections', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        console.log('Collection created:', result.collection);
+        // Navigate to the new collection
+        setActiveTab(`collection-${result.collection.id}`);
+      }
+    } catch (error) {
+      console.error('Error creating collection:', error);
+    }
+  }, []);
+
   // Redirect to sign-in if not authenticated
   useEffect(() => {
     if (status === "unauthenticated") {
@@ -391,6 +446,30 @@ const VeoStudio: React.FC = () => {
   // Render the appropriate tab content
   const renderTabContent = () => {
     switch (activeTab) {
+      case "home":
+        return (
+          <HomeTab
+            onNavigateToTab={setActiveTab}
+            onCreateProject={() => setShowCreateProjectModal(true)}
+            onCreateCollection={(projectId: string, projectName: string) => {
+              setSelectedProjectForCollection({ id: projectId, name: projectName });
+              setShowCreateCollectionModal(true);
+            }}
+          />
+        );
+      case "projects":
+        return (
+          <ProjectsListTab
+            onNavigateToTab={setActiveTab}
+            onCreateProject={() => setShowCreateProjectModal(true)}
+          />
+        );
+      case "collections":
+        return (
+          <CollectionsListTab
+            onNavigateToTab={setActiveTab}
+          />
+        );
       case "products":
         return <ProductSelectionTab />;
       case "brand-guidelines":
@@ -471,6 +550,25 @@ const VeoStudio: React.FC = () => {
       <main className="flex-1 overflow-hidden">
         {renderTabContent()}
       </main>
+      
+      {/* Modals */}
+      <CreateProjectModal
+        isOpen={showCreateProjectModal}
+        onClose={() => setShowCreateProjectModal(false)}
+        onCreateProject={handleCreateProject}
+      />
+      {selectedProjectForCollection && (
+        <CreateCollectionModal
+          isOpen={showCreateCollectionModal}
+          onClose={() => {
+            setShowCreateCollectionModal(false);
+            setSelectedProjectForCollection(null);
+          }}
+          onCreateCollection={handleCreateCollection}
+          projectId={selectedProjectForCollection.id}
+          projectName={selectedProjectForCollection.name}
+        />
+      )}
     </div>
   );
 };

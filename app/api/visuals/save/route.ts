@@ -11,7 +11,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { prompt, imageUrl, videoUrl, type, metadata } = await request.json();
+    const { prompt, imageUrl, videoUrl, type, metadata, projectId } = await request.json();
 
     if (!prompt || !type) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
@@ -26,10 +26,25 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
 
+    // Validate project ownership if projectId is provided
+    if (projectId) {
+      const project = await prisma.project.findFirst({
+        where: {
+          id: projectId,
+          userId: user.id
+        }
+      });
+
+      if (!project) {
+        return NextResponse.json({ error: 'Project not found' }, { status: 404 });
+      }
+    }
+
     // Create visual record
     const visual = await prisma.visual.create({
       data: {
         userId: user.id,
+        projectId: projectId || null,
         prompt,
         imageUrl,
         videoUrl,
@@ -46,6 +61,7 @@ export async function POST(request: NextRequest) {
         prompt: visual.prompt,
         timestamp: visual.createdAt.getTime(),
         type: visual.type,
+        projectId: visual.projectId,
         metadata: visual.metadata ? JSON.parse(visual.metadata) : null
       }
     });

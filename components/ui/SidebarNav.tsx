@@ -15,7 +15,9 @@ import {
   Settings,
   FileText,
   LogOut,
-  User
+  User,
+  Folder,
+  Eye
 } from "lucide-react";
 
 interface SidebarNavProps {
@@ -28,6 +30,18 @@ interface SidebarNavProps {
 }
 
 const navigationItems = [
+  {
+    value: "home",
+    label: "Home Dashboard",
+    icon: Home,
+    shortLabel: "Home"
+  },
+  {
+    value: "projects",
+    label: "Projects",
+    icon: Folder,
+    shortLabel: "Projects"
+  },
   {
     value: "products",
     label: "Product & Visual Selection",
@@ -57,6 +71,12 @@ const navigationItems = [
     label: "Visual Library",
     icon: ImageIcon,
     shortLabel: "Library"
+  },
+  {
+    value: "collections",
+    label: "Collections",
+    icon: Eye,
+    shortLabel: "Collections"
   }
 ];export function SidebarNav({ activeTab, setActiveTab, isOpen, setIsOpen, isCollapsed, setIsCollapsed }: SidebarNavProps) {
   const { data: session } = useSession();
@@ -116,19 +136,6 @@ const navigationItems = [
         <div className={`${showExpanded ? 'p-4' : 'p-2'} flex-1 flex flex-col`}>
           <NavigationMenu.Root orientation="vertical" className="flex-1">
             <NavigationMenu.List className={`space-y-2 ${!showExpanded ? 'flex flex-col justify-center h-full' : ''}`}>
-              {/* Home Item */}
-              <NavigationMenu.Item>
-                <button
-                  className={`w-full flex items-center gap-3 px-3 py-3 text-left rounded-lg transition-all duration-200 text-slate-300 hover:bg-slate-800 hover:text-white ${!showExpanded ? 'justify-center' : ''}`}
-                  title={!showExpanded ? "Home" : undefined}
-                >
-                  <Home className="h-5 w-5 flex-shrink-0" />
-                  {showExpanded && <span className="font-medium whitespace-nowrap">Home</span>}
-                </button>
-              </NavigationMenu.Item>
-
-              {showExpanded && <Separator.Root className="my-4 h-px bg-slate-800" />}
-
               {/* Main Navigation Items */}
               {navigationItems.map((item) => {
                 const Icon = item.icon;
