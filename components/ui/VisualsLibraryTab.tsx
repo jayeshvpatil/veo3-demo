@@ -503,9 +503,21 @@ export default function VisualsLibraryTab({
                         className="w-full h-full object-cover"
                         onError={(e) => {
                           const target = e.target as HTMLImageElement;
+                          console.error('Image failed to load:', {
+                            visualId: visual.id,
+                            urlType: visual.url?.startsWith('data:') ? 'data URL' : visual.url?.startsWith('http') ? 'HTTP URL' : 'unknown',
+                            urlLength: visual.url?.length,
+                            urlPrefix: visual.url?.substring(0, 100)
+                          });
                           target.onerror = null;
                           target.src = '/placeholder-image.svg';
                           target.alt = 'Image not available';
+                        }}
+                        onLoad={() => {
+                          console.log('Image loaded successfully:', {
+                            visualId: visual.id,
+                            urlType: visual.url?.startsWith('data:') ? 'data URL' : 'HTTP URL'
+                          });
                         }}
                       />
                     )}

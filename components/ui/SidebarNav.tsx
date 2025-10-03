@@ -4,6 +4,7 @@ import React from "react";
 import { useSession, signOut } from "next-auth/react";
 import * as NavigationMenu from '@radix-ui/react-navigation-menu';
 import * as Separator from '@radix-ui/react-separator';
+import * as Tooltip from '@radix-ui/react-tooltip';
 import { 
   ShoppingCart, 
   Sparkles, 
@@ -83,7 +84,7 @@ const navigationItems = [
   };
   
   return (
-    <>
+    <Tooltip.Provider delayDuration={300}>
       {/* Mobile overlay */}
       {isOpen && (
         <div 
@@ -134,26 +135,47 @@ const navigationItems = [
                 const Icon = item.icon;
                 const isActive = activeTab === item.value;
                 
+                const buttonContent = (
+                  <button
+                    onClick={() => {
+                      setActiveTab(item.value);
+                      setIsOpen(false);
+                    }}
+                    className={`
+                      w-full flex items-center gap-3 px-3 py-3 text-left rounded-lg transition-all duration-200 font-medium
+                      ${!showExpanded ? 'justify-center' : ''}
+                      ${isActive 
+                        ? 'bg-blue-600 text-white shadow-lg' 
+                        : 'text-slate-300 hover:bg-slate-800 hover:text-white'
+                      }
+                    `}
+                  >
+                    <Icon className="h-5 w-5 flex-shrink-0" />
+                    {showExpanded && <span className="whitespace-nowrap">{item.shortLabel}</span>}
+                  </button>
+                );
+                
                 return (
                   <NavigationMenu.Item key={item.value}>
-                    <button
-                      onClick={() => {
-                        setActiveTab(item.value);
-                        setIsOpen(false);
-                      }}
-                      className={`
-                        w-full flex items-center gap-3 px-3 py-3 text-left rounded-lg transition-all duration-200 font-medium
-                        ${!showExpanded ? 'justify-center' : ''}
-                        ${isActive 
-                          ? 'bg-blue-600 text-white shadow-lg' 
-                          : 'text-slate-300 hover:bg-slate-800 hover:text-white'
-                        }
-                      `}
-                      title={!showExpanded ? item.shortLabel : undefined}
-                    >
-                      <Icon className="h-5 w-5 flex-shrink-0" />
-                      {showExpanded && <span className="whitespace-nowrap">{item.shortLabel}</span>}
-                    </button>
+                    {!showExpanded ? (
+                      <Tooltip.Root>
+                        <Tooltip.Trigger asChild>
+                          {buttonContent}
+                        </Tooltip.Trigger>
+                        <Tooltip.Portal>
+                          <Tooltip.Content
+                            side="right"
+                            sideOffset={5}
+                            className="px-3 py-2 bg-slate-800 text-white text-sm rounded-md shadow-lg z-50"
+                          >
+                            {item.shortLabel}
+                            <Tooltip.Arrow className="fill-slate-800" />
+                          </Tooltip.Content>
+                        </Tooltip.Portal>
+                      </Tooltip.Root>
+                    ) : (
+                      buttonContent
+                    )}
                   </NavigationMenu.Item>
                 );
               })}
@@ -162,25 +184,66 @@ const navigationItems = [
 
               {/* Settings */}
               <NavigationMenu.Item>
-                <button
-                  className={`w-full flex items-center gap-3 px-3 py-3 text-left rounded-lg transition-all duration-200 text-slate-300 hover:bg-slate-800 hover:text-white ${!showExpanded ? 'justify-center' : ''}`}
-                  title={!showExpanded ? "Settings" : undefined}
-                >
-                  <Settings className="h-5 w-5 flex-shrink-0" />
-                  {showExpanded && <span className="font-medium whitespace-nowrap">Settings</span>}
-                </button>
+                {!showExpanded ? (
+                  <Tooltip.Root>
+                    <Tooltip.Trigger asChild>
+                      <button
+                        className="w-full flex items-center gap-3 px-3 py-3 text-left rounded-lg transition-all duration-200 text-slate-300 hover:bg-slate-800 hover:text-white justify-center"
+                      >
+                        <Settings className="h-5 w-5 flex-shrink-0" />
+                      </button>
+                    </Tooltip.Trigger>
+                    <Tooltip.Portal>
+                      <Tooltip.Content
+                        side="right"
+                        sideOffset={5}
+                        className="px-3 py-2 bg-slate-800 text-white text-sm rounded-md shadow-lg z-50"
+                      >
+                        Settings
+                        <Tooltip.Arrow className="fill-slate-800" />
+                      </Tooltip.Content>
+                    </Tooltip.Portal>
+                  </Tooltip.Root>
+                ) : (
+                  <button className="w-full flex items-center gap-3 px-3 py-3 text-left rounded-lg transition-all duration-200 text-slate-300 hover:bg-slate-800 hover:text-white">
+                    <Settings className="h-5 w-5 flex-shrink-0" />
+                    <span className="font-medium whitespace-nowrap">Settings</span>
+                  </button>
+                )}
               </NavigationMenu.Item>
 
               {/* Logout */}
               <NavigationMenu.Item>
-                <button
-                  onClick={handleSignOut}
-                  className={`w-full flex items-center gap-3 px-3 py-3 text-left rounded-lg transition-all duration-200 text-red-400 hover:bg-red-900/20 hover:text-red-300 ${!showExpanded ? 'justify-center' : ''}`}
-                  title={!showExpanded ? "Sign Out" : undefined}
-                >
-                  <LogOut className="h-5 w-5 flex-shrink-0" />
-                  {showExpanded && <span className="font-medium whitespace-nowrap">Sign Out</span>}
-                </button>
+                {!showExpanded ? (
+                  <Tooltip.Root>
+                    <Tooltip.Trigger asChild>
+                      <button
+                        onClick={handleSignOut}
+                        className="w-full flex items-center gap-3 px-3 py-3 text-left rounded-lg transition-all duration-200 text-red-400 hover:bg-red-900/20 hover:text-red-300 justify-center"
+                      >
+                        <LogOut className="h-5 w-5 flex-shrink-0" />
+                      </button>
+                    </Tooltip.Trigger>
+                    <Tooltip.Portal>
+                      <Tooltip.Content
+                        side="right"
+                        sideOffset={5}
+                        className="px-3 py-2 bg-slate-800 text-white text-sm rounded-md shadow-lg z-50"
+                      >
+                        Sign Out
+                        <Tooltip.Arrow className="fill-slate-800" />
+                      </Tooltip.Content>
+                    </Tooltip.Portal>
+                  </Tooltip.Root>
+                ) : (
+                  <button
+                    onClick={handleSignOut}
+                    className="w-full flex items-center gap-3 px-3 py-3 text-left rounded-lg transition-all duration-200 text-red-400 hover:bg-red-900/20 hover:text-red-300"
+                  >
+                    <LogOut className="h-5 w-5 flex-shrink-0" />
+                    <span className="font-medium whitespace-nowrap">Sign Out</span>
+                  </button>
+                )}
               </NavigationMenu.Item>
             </NavigationMenu.List>
           </NavigationMenu.Root>
@@ -220,7 +283,7 @@ const navigationItems = [
           </div>
         )}
       </div>
-    </>
+    </Tooltip.Provider>
   );
 }
 

@@ -38,7 +38,7 @@ const VeoStudio: React.FC = () => {
   // State for sidebar
   const [activeTab, setActiveTab] = useState("home");
   const [isOpen, setIsOpen] = useState(false);
-  const [isCollapsed, setIsCollapsed] = useState(false);
+  const [isCollapsed, setIsCollapsed] = useState(true); // Collapsed by default, expands on hover
   
   // Project and collection modal states
   const [showCreateProjectModal, setShowCreateProjectModal] = useState(false);

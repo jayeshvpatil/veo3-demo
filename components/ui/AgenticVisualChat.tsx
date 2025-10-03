@@ -293,20 +293,6 @@ What kind of visual would you like to create?`,
               <p className="text-gray-600 text-sm">Creating visuals for {productName}</p>
             </div>
             <div className="flex items-center gap-3">
-              <select
-                value={selectedAgent.id}
-                onChange={(e) => {
-                  const agent = agentPersonalities.find(a => a.id === e.target.value);
-                  if (agent) setSelectedAgent(agent);
-                }}
-                className="text-sm p-2 border rounded-md focus:ring-2 focus:ring-purple-500"
-              >
-                {agentPersonalities.map((agent) => (
-                  <option key={agent.id} value={agent.id}>
-                    {agent.icon} {agent.name}
-                  </option>
-                ))}
-              </select>
               {/* Start Over Button - only show if there are generated visuals */}
               {messages.some(m => m.visuals && m.visuals.length > 0) && (
                 <Button
@@ -319,7 +305,7 @@ What kind of visual would you like to create?`,
                 </Button>
               )}
               <Button onClick={onBack} variant="outline" size="sm">
-                Back to Products
+                ← Back
               </Button>
             </div>
           </div>
