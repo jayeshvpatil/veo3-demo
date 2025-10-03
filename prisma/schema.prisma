@@ -103,6 +103,10 @@ model Visual {
   type      String   // 'image' or 'video'
   status    String   @default("pending") // 'pending', 'completed', 'failed'
   metadata  String?  // JSON string for additional data
+  tags      String?  // Comma-separated tags
+  aiTags    String?  // AI-generated tags (comma-separated)
+  aiDescription String? // AI-generated description for search
+  embedding String?  // Vector embedding for similarity search (JSON array)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 

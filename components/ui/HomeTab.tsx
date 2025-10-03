@@ -1,6 +1,6 @@
 "use client";
 import React, { useState, useEffect } from 'react';
-import { Plus, Folder, Image, Video, Clock, Eye, ChevronRight } from 'lucide-react';
+import { Plus, Folder, Image, Video, Clock, Eye, ChevronRight, Sparkles } from 'lucide-react';
 
 interface Project {
   id: string;
@@ -50,12 +50,14 @@ interface HomeTabProps {
   onNavigateToTab: (tab: string) => void;
   onCreateProject: () => void;
   onCreateCollection: (projectId: string, projectName: string) => void;
+  onSelectProject?: (projectId: string) => void;
 }
 
 export default function HomeTab({ 
   onNavigateToTab, 
   onCreateProject, 
-  onCreateCollection 
+  onCreateCollection,
+  onSelectProject
 }: HomeTabProps) {
   const [projects, setProjects] = useState<Project[]>([]);
   const [collections, setCollections] = useState<Collection[]>([]);
@@ -132,10 +134,10 @@ export default function HomeTab({
             New Project
           </button>
           <button
-            onClick={() => onNavigateToTab('prompt')}
+            onClick={() => onNavigateToTab('create')}
             className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg flex items-center gap-2 transition-colors"
           >
-            <Video className="w-5 h-5" />
+            <Sparkles className="w-5 h-5" />
             Start Creating
           </button>
         </div>
@@ -177,7 +179,13 @@ export default function HomeTab({
               <div
                 key={project.id}
                 className="bg-gray-800 rounded-lg p-6 hover:bg-gray-750 cursor-pointer transition-colors group"
-                onClick={() => onNavigateToTab(`project-${project.id}`)}
+                onClick={() => {
+                  if (onSelectProject) {
+                    onSelectProject(project.id);
+                  }
+                  // Navigate to create tab instead of project detail page
+                  onNavigateToTab('create');
+                }}
               >
                 <div className="flex items-start justify-between mb-4">
                   <div className="flex-1">
@@ -340,14 +348,14 @@ export default function HomeTab({
         <h2 className="text-2xl font-semibold text-white">Quick Actions</h2>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           <button
-            onClick={() => onNavigateToTab('prompt')}
+            onClick={() => onNavigateToTab('create')}
             className="bg-gradient-to-br from-purple-600 to-purple-700 p-6 rounded-lg text-white hover:from-purple-700 hover:to-purple-800 transition-all"
           >
             <Video className="w-8 h-8 mb-2" />
             <div className="text-sm font-medium">Generate Video</div>
           </button>
           <button
-            onClick={() => onNavigateToTab('prompt')}
+            onClick={() => onNavigateToTab('create')}
             className="bg-gradient-to-br from-blue-600 to-blue-700 p-6 rounded-lg text-white hover:from-blue-700 hover:to-blue-800 transition-all"
           >
             <Image className="w-8 h-8 mb-2" />

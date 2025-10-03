@@ -37,7 +37,7 @@ interface ProductSelectionTabProps {
 }
 
 export default function ProductSelectionTab({ className = "" }: ProductSelectionTabProps) {
-  const { addProductToPrompt } = useProduct();
+  const { addProductToPrompt, selectedProduct: contextSelectedProduct, setSelectedProduct: setContextSelectedProduct } = useProduct();
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
@@ -102,6 +102,12 @@ export default function ProductSelectionTab({ className = "" }: ProductSelection
         ? prev[filterType].filter(item => item !== value)
         : [...prev[filterType], value]
     }));
+  };
+
+  const handleSelectProduct = (product: Product) => {
+    // Simply select the product in context for use in Create tab
+    setContextSelectedProduct(product);
+    setSelectedId(product.id);
   };
 
   const handleSelectForVideo = (product: Product) => {
@@ -316,7 +322,7 @@ export default function ProductSelectionTab({ className = "" }: ProductSelection
               <h2 className="text-2xl font-semibold text-white">Michael Kors Products</h2>
               <p className="text-slate-300 mt-1">
                 {filteredProducts.length} of {products.length} products
-                {selectedId && " • 1 selected for video generation"}
+                {contextSelectedProduct && ` • "${contextSelectedProduct.title}" selected`}
               </p>
             </div>
             
@@ -376,10 +382,10 @@ export default function ProductSelectionTab({ className = "" }: ProductSelection
               {filteredProducts.map(product => (
                 <div 
                   key={product.id} 
-                  className={`relative group border border-slate-600 bg-slate-800 rounded-lg overflow-hidden transition-all duration-200 hover:shadow-lg hover:border-slate-500 ${
-                    selectedId === product.id 
-                      ? 'ring-2 ring-blue-500 bg-blue-900/20' 
-                      : ''
+                  className={`relative group border bg-slate-800 rounded-lg overflow-hidden transition-all duration-200 hover:shadow-lg ${
+                    contextSelectedProduct?.id === product.id 
+                      ? 'ring-2 ring-blue-500 border-blue-500 bg-blue-900/20' 
+                      : 'border-slate-600 hover:border-slate-500'
                   } ${viewMode === 'list' ? 'flex' : ''}`}
                 >
                   <div className={`relative ${viewMode === 'list' ? 'w-32 h-32 flex-shrink-0' : 'aspect-square'}`}>
@@ -398,10 +404,10 @@ export default function ProductSelectionTab({ className = "" }: ProductSelection
                         Best Seller
                       </div>
                     )}
-                    {selectedId === product.id && (
+                    {contextSelectedProduct?.id === product.id && (
                       <div className="absolute inset-0 bg-blue-600 bg-opacity-20 flex items-center justify-center">
                         <div className="bg-blue-600 text-white px-3 py-1 rounded-full text-sm font-medium">
-                          Selected
+                          ✓ Selected
                         </div>
                       </div>
                     )}
@@ -427,20 +433,27 @@ export default function ProductSelectionTab({ className = "" }: ProductSelection
 
                     <div className="space-y-2">
                       <button
-                        onClick={() => handleSelectForVideo(product)}
+                        onClick={() => handleSelectProduct(product)}
                         className={`w-full flex items-center justify-center gap-2 py-2 px-4 rounded-lg font-medium transition-colors ${
-                          selectedId === product.id
-                            ? 'bg-purple-600 text-white'
-                            : 'bg-slate-700 text-slate-300 hover:bg-purple-600 hover:text-white'
+                          contextSelectedProduct?.id === product.id
+                            ? 'bg-blue-600 text-white ring-2 ring-blue-400'
+                            : 'bg-slate-700 text-slate-300 hover:bg-blue-600 hover:text-white'
                         }`}
                       >
-                        <Sparkles size={16} />
-                        {selectedId === product.id ? 'Generating Visuals...' : 'Create Stunning Visuals'}
+                        {contextSelectedProduct?.id === product.id ? '✓ Selected' : 'Select Product'}
+                      </button>
+                      
+                      <button
+                        onClick={() => handleSelectForVideo(product)}
+                        className="w-full flex items-center justify-center gap-2 py-1.5 px-4 rounded-lg font-medium transition-colors bg-slate-700 text-slate-300 hover:bg-purple-600 hover:text-white border border-purple-500/30"
+                      >
+                        <Sparkles size={14} />
+                        Create Stunning Visuals
                       </button>
                       
                       <button
                         onClick={() => handleChatWithAgent(product)}
-                        className="w-full flex items-center justify-center gap-2 py-1.5 px-4 rounded-lg font-medium transition-colors bg-slate-700 border border-purple-500 text-purple-300 hover:bg-purple-600 hover:text-white"
+                        className="w-full flex items-center justify-center gap-2 py-1.5 px-4 rounded-lg font-medium transition-colors bg-slate-700 border border-purple-500/30 text-purple-300 hover:bg-purple-600 hover:text-white"
                       >
                         <MessageCircle size={14} />
                         Chat with AI Agent

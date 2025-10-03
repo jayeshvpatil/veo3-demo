@@ -6,8 +6,7 @@ import * as NavigationMenu from '@radix-ui/react-navigation-menu';
 import * as Separator from '@radix-ui/react-separator';
 import { 
   ShoppingCart, 
-  Video, 
-  PlayCircle, 
+  Sparkles, 
   ImageIcon,
   Menu,
   X,
@@ -55,16 +54,10 @@ const navigationItems = [
     shortLabel: "Brand Guidelines"
   },
   {
-    value: "prompt",
-    label: "Video Creation Studio", 
-    icon: Video,
-    shortLabel: "Video"
-  },
-  {
-    value: "review",
-    label: "Generated Videos & Review",
-    icon: PlayCircle,
-    shortLabel: "Video Review"
+    value: "create",
+    label: "Create Content", 
+    icon: Sparkles,
+    shortLabel: "Create"
   },
   {
     value: "library",

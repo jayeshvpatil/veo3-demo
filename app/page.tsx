@@ -14,6 +14,9 @@ import ProjectsListTab from "@/components/ui/ProjectsListTab";
 import CollectionsListTab from "@/components/ui/CollectionsListTab";
 import CreateProjectModal from "@/components/ui/CreateProjectModal";
 import CreateCollectionModal from "@/components/ui/CreateCollectionModal";
+import ProjectSelector from "@/components/ui/ProjectSelector";
+import CreateTab from "@/components/ui/CreateTab";
+
 type SavedVisual = {
   id: string;
   url: string;
@@ -146,6 +149,13 @@ const VeoStudio: React.FC = () => {
   const startGeneration = useCallback(async () => {
     if (!canStart || isGenerating) return;
     
+    // Check if project is selected
+    if (!currentProject) {
+      alert('Please select a project before generating content');
+      setShowCreateProjectModal(true);
+      return;
+    }
+    
     setIsGenerating(true);
     try {
       console.log("Starting video generation with prompt:", prompt);
@@ -233,7 +243,7 @@ const VeoStudio: React.FC = () => {
       console.error("Error generating video:", error);
       setIsGenerating(false);
     }
-  }, [canStart, isGenerating, prompt, selectedModel, visualStyle, cameraAngle, imageFile, saveVisual]);
+  }, [canStart, isGenerating, prompt, selectedModel, visualStyle, cameraAngle, imageFile, saveVisual, currentProject, setShowCreateProjectModal]);
 
   const onPickImage = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -244,6 +254,13 @@ const VeoStudio: React.FC = () => {
 
   const generateWithImagen = useCallback(async () => {
     if (!imagePrompt.trim() || imagenBusy) return;
+    
+    // Check if project is selected
+    if (!currentProject) {
+      alert('Please select a project before generating content');
+      setShowCreateProjectModal(true);
+      return;
+    }
     
     setImagenBusy(true);
     try {
@@ -309,7 +326,7 @@ const VeoStudio: React.FC = () => {
       console.error("Error generating image:", error);
       setImagenBusy(false);
     }
-  }, [imagePrompt, imagenBusy, visualStyle, saveVisual]);
+  }, [imagePrompt, imagenBusy, visualStyle, saveVisual, currentProject, setShowCreateProjectModal]);
 
   const resetAll = useCallback(() => {
     setPrompt("");
@@ -455,6 +472,7 @@ const VeoStudio: React.FC = () => {
               setSelectedProjectForCollection({ id: projectId, name: projectName });
               setShowCreateCollectionModal(true);
             }}
+            onSelectProject={setCurrentProject}
           />
         );
       case "projects":
@@ -474,6 +492,38 @@ const VeoStudio: React.FC = () => {
         return <ProductSelectionTab />;
       case "brand-guidelines":
         return <BrandGuidelines />;
+      case "create":
+        return (
+          <CreateTab
+            prompt={prompt}
+            setPrompt={setPrompt}
+            selectedModel={selectedModel}
+            setSelectedModel={setSelectedModel}
+            canStart={canStart}
+            isGenerating={isGenerating}
+            startGeneration={startGeneration}
+            showImageTools={showImageTools}
+            setShowImageTools={setShowImageTools}
+            imagePrompt={imagePrompt}
+            setImagePrompt={setImagePrompt}
+            imagenBusy={imagenBusy}
+            onPickImage={onPickImage}
+            generateWithImagen={generateWithImagen}
+            imageFile={imageFile}
+            generatedImage={generatedImage}
+            resetAll={resetAll}
+            visualStyle={visualStyle}
+            setVisualStyle={setVisualStyle}
+            cameraAngle={cameraAngle}
+            setCameraAngle={setCameraAngle}
+            videoUrl={videoUrl}
+            onOutputChanged={handleOutputChanged}
+            onDownload={handleDownload}
+            onResetTrim={handleResetTrim}
+            currentProject={currentProject}
+            onNavigateToAssets={() => setActiveTab('products')}
+          />
+        );
       case "prompt":
         return (
           <PromptManagementTab
@@ -518,6 +568,7 @@ const VeoStudio: React.FC = () => {
             onDeleteVisual={handleDeleteVisual}
             onReuseVisual={handleReuseVisual}
             onClearAll={handleClearAll}
+            onRefresh={loadSavedVisuals}
           />
         );
       default:
@@ -547,8 +598,18 @@ const VeoStudio: React.FC = () => {
         isCollapsed={isCollapsed}
         setIsCollapsed={setIsCollapsed}
       />
-      <main className="flex-1 overflow-hidden">
-        {renderTabContent()}
+      <main className="flex-1 overflow-hidden flex flex-col">
+        {/* Project Selector - Show on create tab */}
+        {activeTab === 'create' && (
+          <ProjectSelector
+            currentProjectId={currentProject}
+            onProjectChange={setCurrentProject}
+            onCreateProject={() => setShowCreateProjectModal(true)}
+          />
+        )}
+        <div className="flex-1 overflow-hidden">
+          {renderTabContent()}
+        </div>
       </main>
       
       {/* Modals */}

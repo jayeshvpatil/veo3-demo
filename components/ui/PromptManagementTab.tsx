@@ -172,13 +172,21 @@ export default function PromptManagementTab({
         
         {/* Header */}
         <div className="text-center">
-          <h2 className="text-3xl font-bold text-gray-900 mb-2">Video Studio</h2>
-          <p className="text-gray-600">Transform your product images into dynamic showcase videos</p>
+          <h2 className="text-3xl font-bold text-gray-900 mb-2">
+            {showImageTools ? "Image Studio" : "Video Studio"}
+          </h2>
+          <p className="text-gray-600">
+            {showImageTools 
+              ? "Generate professional product images with AI" 
+              : "Transform your product images into dynamic showcase videos"
+            }
+          </p>
         </div>
 
-        {/* Quick Templates */}
-        <div className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm">
-          <h3 className="text-xl font-semibold text-gray-900 mb-4">🎬 Cinematic Templates</h3>
+        {/* Quick Templates - Only show for video mode */}
+        {!showImageTools && (
+          <div className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm">
+            <h3 className="text-xl font-semibold text-gray-900 mb-4">🎬 Cinematic Templates</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {quickTemplates.map((template) => (
               <button
@@ -200,6 +208,7 @@ export default function PromptManagementTab({
             ))}
           </div>
         </div>
+        )}
 
         {/* Main Controls */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -209,17 +218,23 @@ export default function PromptManagementTab({
             
             {/* Custom Prompt */}
             <div className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">✨ Video Description</h3>
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">
+                ✨ {showImageTools ? "Image Description" : "Video Description"}
+              </h3>
               <textarea
-                value={prompt}
-                onChange={(e) => setPrompt(e.target.value)}
-                placeholder="Create a dynamic video showcasing the product. E.g., 'Smooth 360-degree rotation revealing all details with cinematic lighting and elegant camera movement' or 'Dynamic zoom-in from wide shot to close-up highlighting texture and craftsmanship'"
+                value={showImageTools ? imagePrompt : prompt}
+                onChange={(e) => showImageTools ? setImagePrompt(e.target.value) : setPrompt(e.target.value)}
+                placeholder={showImageTools 
+                  ? "Describe the image you want to generate. E.g., 'Professional studio photograph of the product on a clean white background with soft, even lighting'"
+                  : "Create a dynamic video showcasing the product. E.g., 'Smooth 360-degree rotation revealing all details with cinematic lighting and elegant camera movement'"
+                }
                 className="w-full border border-gray-300 rounded-lg px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-none"
                 rows={6}
               />
             </div>
 
-            {/* Visual Style & Camera Movement */}
+            {/* Visual Style & Camera Movement - Only for video */}
+            {!showImageTools && (
             <div className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm">
               <h3 className="text-lg font-semibold text-gray-900 mb-4">🎥 Cinematography</h3>
               <div className="grid grid-cols-1 gap-4">
@@ -259,6 +274,7 @@ export default function PromptManagementTab({
                 </div>
               </div>
             </div>
+            )}
           </div>
 
           {/* Right Column - Image & Controls */}
@@ -363,31 +379,55 @@ export default function PromptManagementTab({
                 </button>
               </div>
 
-              <button
-                onClick={startGeneration}
-                disabled={!canStart || isGenerating}
-                className={`w-full flex items-center justify-center gap-3 px-6 py-4 rounded-lg text-white font-semibold text-lg transition ${
-                  !canStart || isGenerating
-                    ? "bg-gray-400 cursor-not-allowed"
-                    : "bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 shadow-lg hover:shadow-xl"
-                }`}
-              >
-                {isGenerating ? (
-                  <>
-                    <Clock className="w-5 h-5 animate-spin" />
-                    Creating Video...
-                  </>
-                ) : (
-                  <>
-                    <ArrowRight className="w-5 h-5" />
-                    Create Product Video
-                  </>
-                )}
-              </button>
+              {showImageTools ? (
+                <button
+                  onClick={generateWithImagen}
+                  disabled={!imagePrompt || imagenBusy}
+                  className={`w-full flex items-center justify-center gap-3 px-6 py-4 rounded-lg text-white font-semibold text-lg transition ${
+                    !imagePrompt || imagenBusy
+                      ? "bg-gray-400 cursor-not-allowed"
+                      : "bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 shadow-lg hover:shadow-xl"
+                  }`}
+                >
+                  {imagenBusy ? (
+                    <>
+                      <Clock className="w-5 h-5 animate-spin" />
+                      Generating Image...
+                    </>
+                  ) : (
+                    <>
+                      <Wand2 className="w-5 h-5" />
+                      Generate Image
+                    </>
+                  )}
+                </button>
+              ) : (
+                <button
+                  onClick={startGeneration}
+                  disabled={!canStart || isGenerating}
+                  className={`w-full flex items-center justify-center gap-3 px-6 py-4 rounded-lg text-white font-semibold text-lg transition ${
+                    !canStart || isGenerating
+                      ? "bg-gray-400 cursor-not-allowed"
+                      : "bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 shadow-lg hover:shadow-xl"
+                  }`}
+                >
+                  {isGenerating ? (
+                    <>
+                      <Clock className="w-5 h-5 animate-spin" />
+                      Creating Video...
+                    </>
+                  ) : (
+                    <>
+                      <ArrowRight className="w-5 h-5" />
+                      Create Product Video
+                    </>
+                  )}
+                </button>
+              )}
               
-              {!isGenerating && canStart && (
+              {!isGenerating && !imagenBusy && canStart && (
                 <div className="text-center text-sm text-gray-500 mt-3">
-                  ✨ Will automatically switch to Review tab to show your video
+                  ✨ {showImageTools ? "Your image will be generated and displayed" : "Will automatically switch to Review tab to show your video"}
                 </div>
               )}
             </div>

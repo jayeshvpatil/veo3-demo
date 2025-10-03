@@ -26,6 +26,18 @@ export async function GET(request: NextRequest) {
         userId: user.id,
         status: 'completed'
       },
+      include: {
+        project: {
+          select: { name: true }
+        },
+        collectionVisuals: {
+          include: {
+            collection: {
+              select: { name: true }
+            }
+          }
+        }
+      },
       orderBy: { createdAt: 'desc' }
     });
 
@@ -36,7 +48,12 @@ export async function GET(request: NextRequest) {
       prompt: visual.prompt,
       timestamp: visual.createdAt.getTime(),
       type: visual.type,
-      metadata: visual.metadata ? JSON.parse(visual.metadata) : null
+      metadata: visual.metadata ? JSON.parse(visual.metadata) : null,
+      tags: visual.tags,
+      aiTags: visual.aiTags,
+      aiDescription: visual.aiDescription,
+      project: visual.project,
+      collections: visual.collectionVisuals.map(cv => ({ name: cv.collection.name }))
     }));
 
     return NextResponse.json({ visuals: savedVisuals });
